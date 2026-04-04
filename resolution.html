@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resolution</title>
+    <style>
+        body {
+            background-color: #0f172a;
+            font-family: Arial;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #38bdf8;
+        }
+
+        .card {
+            border: 1px solid #334155;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            background-color: #1e293b;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .complete {
+            background-color: #22c55e;
+            color: white;
+        }
+
+        .reject {
+            background-color: #f59e0b;
+            color: black;
+        }
+
+        .small {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Return Requested</h1>
+    <p style="text-align:center;">A finder believes they have your item.</p>
+
+    <!-- Action -->
+    <div class="card">
+        <h3>Action Required</h3>
+        <p>Verify the return and confirm if correct.</p>
+    </div>
+
+    <!-- Contact -->
+    <div class="card">
+        <h3>Finder's Contact Details</h3>
+        <p><strong>Harshita Padala</strong></p>
+        <p class="small">Roll No: B240258CS</p>
+        <p class="small">📧 padala_b240258cs@nitc.ac.in</p>
+        <p class="small">📞 +91 9182041070</p>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-group">
+        <button class="complete">Mark as Completed</button>
+        <button class="reject">Item Doesn't Match</button>
+    </div>
+
+    <!-- Description -->
+    <div class="card">
+        <h3>Description</h3>
+        <p>Lost item reported by user.</p>
+        <p class="small">Submitted recently</p>
+    </div>
+
+    <!-- Item Details -->
+    <div class="card">
+        <h3>Item Details</h3>
+        <p><strong>Item Name</strong></p>
+        <p class="small">Location: NITC Campus</p>
+        <p class="small">Found on: 2026-02-10</p>
+    </div>
+
+</div>
+
+</body>
+</html>
