@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retrievo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="close-btn">X</div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html">Browse Items</a>
+                <a href="profile.html">My profile</a>
+                <a href="notifications.html" >Notifications</a>
+                <a href="report.html" class="active">Report item</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="menu-icon" id="openMenu">☰</div> 
+                <div class="title">Retrievo</div>
+                <div class="login-container">
+                    <span>login</span>
+                </div>
+            </header>
+
+            <section class="content">
+                <h1>Report an Item</h1>
+                <div class="form-container">
+                    <form action="#" method="POST">
+                        <div class="form-group">
+                            <label>I want to report a:</label>
+                            <select name="type">
+                                <option value="lost">Lost Item</option>
+                                <option value="found">Found Item</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Item Name</label>
+                            <input type="text" placeholder="e.g., Black Hydroflask">
+                        </div>
+                        <div class="form-group">
+                            <label>Location (Lost/Found)</label>
+                            <input type="text" placeholder="e.g., Cafeteria, Table 4">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea rows="4" placeholder="Provide identifiable details..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">Submit Report</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
