@@ -35,28 +35,130 @@
             <section class="content">
                 <h1>Report an Item</h1>
                 <div class="form-container">
-                    <form action="#" method="POST">
-                        <div class="form-group">
-                            <label>I want to report a:</label>
-                            <select name="type">
-                                <option value="lost">Lost Item</option>
-                                <option value="found">Found Item</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Item Name</label>
-                            <input type="text" placeholder="e.g., Black Hydroflask">
-                        </div>
-                        <div class="form-group">
-                            <label>Location (Lost/Found)</label>
-                            <input type="text" placeholder="e.g., Cafeteria, Table 4">
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea rows="4" placeholder="Provide identifiable details..."></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary">Submit Report</button>
-                    </form>
+                        <form id="reportForm">
+
+      <!-- Title -->
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="title" placeholder="Short descriptive title" required>
+        </div>
+
+        <!-- Category -->
+        <div class="form-group">
+            <label>Category</label>
+            <select id="category" required>
+                <option value="">Select Category</option>
+                <option>Electronics</option>
+                <option>Clothing</option>
+                <option>Bags</option>
+                <option>Keys & Wallets</option>
+                <option>Documents</option>
+                <option>Others</option>
+            </select>
+        </div>
+
+        <!-- Type -->
+        <div class="form-group">
+            <label>Type</label>
+            <select id="type" required>
+                <option value="">Select Type</option>
+                <option>Lost</option>
+                <option>Found</option>
+            </select>
+        </div>
+
+        <!-- Visibility -->
+        <div class="form-group">
+            <label>Visibility</label>
+            <select id="visibility" required>
+                <option value="">Select Visibility</option>
+                <option>Public</option>
+                <option>Boys</option>
+                <option>Girls</option>
+            </select>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group">
+            <label>Location</label>
+            <select id="location" required>
+                <option value="">Select Location</option>
+
+                <optgroup label="Central Campus">
+                    <option>NLHC</option>
+                    <option>ELHC</option>
+                    <option>ECLHC</option>
+                    <option>Main Ground</option>
+                    <option>Main Building</option>
+                    <option>OAT</option>
+                    <option>Rajpath</option>
+                    <option>Basketball Court</option>
+                    <option>ABC Halls</option>
+                    <option>Auditorium</option>
+                </optgroup>
+
+                <optgroup label="Hostels">
+                    <option>A Hostel</option>
+                    <option>B Hostel</option>
+                    <option>C Hostel</option>
+                    <option>D Hostel</option>
+                    <option>E Hostel</option>
+                    <option>F Hostel</option>
+                    <option>G Hostel</option>
+                    <option>MBH 1</option>
+                    <option>MBH 2</option>
+                    <option>LH</option>
+                    <option>MLH</option>
+                    <option>PG Hostel 1</option>
+                    <option>PG Hostel 2</option>
+                </optgroup>
+
+                <optgroup label="Labs & Departments">
+                    <option>IT Complex</option>
+                    <option>CCC</option>
+                    <option>Mech Labs</option>
+                    <option>Civil Labs</option>
+                    <option>Production Labs</option>
+                    <option>CSED</option>
+                    <option>ECED</option>
+                    <option>EEE</option>
+                    <option>Mechanical</option>
+                    <option>Civil</option>
+                    <option>Biotechnology</option>
+                    <option>Production</option>
+                    <option>Material Science</option>
+                    <option>Engineering Physics</option>
+                    <option>Architecture</option>
+                    <option>Mathematics</option>
+                    <option>Physics</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="date" required>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label>Description</label>
+            <textarea id="description" rows="4" placeholder="Enter details..." required></textarea>
+        </div>
+
+        <!-- Image -->
+        <div class="form-group">
+            <label>Upload Image</label>
+            <input type="file" id="imageInput" accept="image/*">
+            <br><br>
+            <img id="preview" width="150" style="display:none; border-radius:10px;">
+        </div>
+
+        <button type="submit" class="btn-primary">Submit Report</button>
+
+                </form>
+
                 </div>
             </section>
         </main>
