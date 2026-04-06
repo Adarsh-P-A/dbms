@@ -60,9 +60,34 @@ function normalizeImageUrl(rawUrl) {
     return rawUrl.trim().replace(/["']/g, '');
 }
 
+function formatLocation(rawLocation) {
+    if (!rawLocation) {
+        return 'Unknown location';
+    }
+
+    return String(rawLocation)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function getTypeLabel(type) {
+    if (type === 'lost') {
+        return 'Lost';
+    }
+
+    if (type === 'found') {
+        return 'Found';
+    }
+
+    return 'Item';
+}
+
 function createItemCard(item) {
     const card = document.createElement('article');
     card.className = 'item-card';
+
+    const media = document.createElement('div');
+    media.className = 'item-card-media';
 
     const image = document.createElement('img');
     image.className = 'item-card-image';
@@ -75,27 +100,51 @@ function createItemCard(item) {
     fallback.className = 'item-card-image-fallback';
     fallback.textContent = 'No image';
 
+    const badge = document.createElement('span');
+    badge.className = 'item-card-badge';
+    if (item.type === 'lost') {
+        badge.classList.add('item-card-badge-lost');
+    } else if (item.type === 'found') {
+        badge.classList.add('item-card-badge-found');
+    }
+    badge.textContent = getTypeLabel(item.type);
+
     image.addEventListener('error', () => {
         image.remove();
-        card.prepend(fallback);
+        media.prepend(fallback);
     });
 
     const title = document.createElement('h3');
     title.className = 'item-card-title';
     title.textContent = item.title || 'Untitled Item';
 
-    const meta = document.createElement('p');
-    meta.className = 'item-card-meta';
-    meta.textContent = `${(item.type || 'item').toUpperCase()} | ${item.location || 'Unknown location'}`;
+    const details = document.createElement('div');
+    details.className = 'item-card-details';
 
-    const date = document.createElement('p');
-    date.className = 'item-card-date';
-    date.textContent = formatDate(item.date);
+    const dateRow = document.createElement('p');
+    dateRow.className = 'item-card-meta';
+    dateRow.textContent = `Date: ${formatDate(item.date)}`;
 
-    card.appendChild(image);
+    const locationRow = document.createElement('p');
+    locationRow.className = 'item-card-date';
+    locationRow.textContent = `Location: ${formatLocation(item.location)}`;
+
+    details.appendChild(dateRow);
+    details.appendChild(locationRow);
+
+    const ctaButton = document.createElement('button');
+    ctaButton.type = 'button';
+    ctaButton.className = 'btn-primary item-card-button';
+    ctaButton.textContent = 'View Details';
+    ctaButton.disabled = true;
+
+    media.appendChild(image);
+    media.appendChild(badge);
+
+    card.appendChild(media);
     card.appendChild(title);
-    card.appendChild(meta);
-    card.appendChild(date);
+    card.appendChild(details);
+    card.appendChild(ctaButton);
 
     return card;
 }

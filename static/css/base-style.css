@@ -191,6 +191,12 @@ h1 {
     border: 1px solid #ccc;
     padding: 10px;
     border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-card-media {
+    position: relative;
 }
 
 .item-card-image,
@@ -216,11 +222,37 @@ h1 {
     font-size: 0.95rem;
 }
 
+.item-card-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: #6b7280;
+}
+
+.item-card-badge-lost {
+    background: #dc2626;
+}
+
+.item-card-badge-found {
+    background: #d97706;
+}
+
 .item-card-title {
     font-size: 1rem;
     font-weight: 600;
     color: #1f2937;
     margin-bottom: 6px;
+}
+
+.item-card-details {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 4px;
+    padding-top: 8px;
 }
 
 .item-card-meta {
@@ -232,6 +264,18 @@ h1 {
 .item-card-date {
     color: #6b7280;
     font-size: 0.85rem;
+}
+
+.item-card-button {
+    width: 100%;
+    margin-top: auto;
+    opacity: 1;
+    cursor: default;
+}
+
+.item-card-button:disabled {
+    opacity: 1;
+    cursor: default;
 }
 
 .items-state {
