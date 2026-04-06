@@ -1,0 +1,204 @@
+.item-details-section {
+    height: 450px;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 20px;
+    /* Clean, modern sans-serif fallback stack */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+    color: #333;
+}
+
+/* Header / Title */
+.details-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.details-title {
+    margin: 0;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.2;
+}
+
+.detail-subtitle {
+    margin-top: 18px;
+    color: #4b5563;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    max-width: 860px;
+}
+
+/* Grid Layout */
+.content-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 600px) minmax(300px, 1fr);
+    gap: 50px;
+    align-items: start;
+    width: 100%;
+}
+
+/* --- LEFT COLUMN --- */
+
+/* The Canvas Box for the Image */
+.image-canvas {
+    width: 100%;
+    max-width: 600px;
+    height: 450px; /* Fixed size */
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px; /* Creates an inner "matting" like a picture frame */
+    box-sizing: border-box;
+    margin-bottom: 30px;
+}
+
+.image-canvas img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+    border-radius: 4px;
+}
+
+.description-block {
+    padding-left: 10px;
+}
+
+.section-heading {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.item-details-section {
+    min-width: 80%;
+}
+
+.description-text {
+    line-height: 1.7;
+    color: #4b5563;
+    font-size: 1.05rem;
+    white-space: pre-line; 
+}
+
+
+/* --- RIGHT COLUMN --- */
+
+/* Details Card */
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: sticky;
+    top: 20px;
+    align-self: start;
+}
+
+.details-card,
+.description-card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+.badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+}
+
+.badge.category { background: #f3f4f6; color: #4b5563; }
+.badge.type { background: #f3f4f6; color: #4b5563; }
+.badge.visibility { background: #f3f4f6; color: #4b5563; }
+
+
+/* Meta Information List */
+.meta-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 30px 0;
+}
+
+.meta-list li {
+    display: flex;
+    padding: 12px 0;
+    border-bottom: 1px solid #f9fafb;
+    font-size: 0.95rem;
+}
+
+.meta-list li:last-child {
+    border-bottom: none;
+}
+
+.meta-label {
+    color: #6b7280;
+    font-weight: 500;
+    width: 110px; /* Fixed width for perfect vertical alignment */
+    flex-shrink: 0;
+}
+
+.meta-value {
+    color: #111827;
+    font-weight: 500;
+}
+
+/* Call to Action Button */
+.primary-action-btn {
+    width: 100%;
+    padding: 14px 20px;
+    background-color:#333;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    max-width: 50%;
+}
+
+.primary-action-btn:hover {
+    background-color: #555;
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 950px) {
+    .content-grid {
+        grid-template-columns: 1fr; /* Stack left and right */
+    }
+    
+    .image-canvas {
+        width: 100%;
+        max-width: 500px;
+        height: auto;
+        aspect-ratio: 1 / 1; /* Keeps the square canvas shape on mobile */
+        margin: 0 auto 30px auto;
+    }
+    
+    .details-card {
+        position: static; /* Removes sticky behavior on mobile */
+    }
+}

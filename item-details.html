@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retrievo</title>
+    <link rel="stylesheet" href="static/css/base-style.css">
+    <link rel="stylesheet" href="static/css/item-details.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="close-btn">X</div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html">Browse Items</a>
+                <a href="profile.html" class="active">My profile</a>
+                <a href="notifications.html">Notifications</a>
+                <a href="report.html">Report item</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="menu-icon" id="openMenu">☰</div>
+                <div class="title">Retrievo</div>
+                <div class="login-container">
+                    <span>login</span>
+                </div>
+            </header>
+
+            <section class="item-details-section">
+                <div class="details-header">
+                    <h1 id="detail-title" class="details-title">Loading...</h1>
+                    <p id="detail-description" class="detail-subtitle">Loading description...</p>
+                </div>
+
+                <div class="content-grid">
+                    <div class="left-column">
+                        <div class="image-canvas">
+                            <img id="detail-image" src="" alt="Item Image">
+                        </div>
+                    </div>
+
+                    <div class="right-column">
+                        <div class="details-card">
+                            <div class="badges">
+                                <span id="detail-category" class="badge category">Category</span>
+                                <span id="detail-type" class="badge type">Type</span>
+                                <span id="detail-visibility" class="badge visibility">Visibility</span>
+                            </div>
+
+                            <h3 class="section-heading">Details of the Item</h3>
+                            <ul class="meta-list">
+                                <li>
+                                    <span class="meta-label">Date:</span> 
+                                    <span id="detail-date" class="meta-value"></span>
+                                </li>
+                                <li>
+                                    <span class="meta-label">Location:</span> 
+                                    <span id="detail-location" class="meta-value"></span>
+                                </li>
+                                <li>
+                                    <span class="meta-label">Posted On:</span> 
+                                    <span id="detail-created" class="meta-value"></span>
+                                </li>
+                                <li>
+                                    <span class="meta-label">Poster ID:</span> 
+                                    <span id="detail-poster" class="meta-value"></span>
+                                </li>
+                            </ul>
+                            
+                            <button class="primary-action-btn">Take Action</button>
+                        </div>
+                    </div>
+                    
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="static/js/script_itemdetails.js"></script>
+</body>
+
+</html>

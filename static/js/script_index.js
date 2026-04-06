@@ -40,20 +40,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Rendering cards
             const cardsHTML = dataToRender.map(item => {
                 return `
-                    <div class="item-card">
-                        <div class="image-placeholder">
-                            <img src="${item.image}" alt="${item.title}" style="width: 100%; height: 150px; object-fit: cover;" />
-                        </div>
-                        <div class="card-info">
-                            <h3 class="card-title">${item.title}</h3>
-                            <div class="card-details">
-                                <span class="place">${item.place}</span> | 
-                                <span class="date">${item.date}</span>
+                    <a href="item-details.html?id=${item.id}" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="item-card">
+                            <div class="image-placeholder">
+                                <img src="${item.image}" alt="${item.title}" style="width: 100%; height: 150px; object-fit: cover;" />
+                            </div>
+                            <div class="card-info">
+                                <h3 class="card-title">${item.title}</h3>
+                                <div class="card-details">
+                                    <span class="place">${item.location}</span> | 
+                                    <span class="date">${item.date}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 `;
             }).join('');
 
@@ -73,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     item.place.toLowerCase().includes(searchTerm);
                 
                 // Check if the category matches (or if 'all' is selected)
-                const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+                const matchesCategory = selectedCategory === 'all' || item.type === selectedCategory;
 
                 // Only keep the item if it matches BOTH the search and the category
                 return matchesSearch && matchesCategory;
