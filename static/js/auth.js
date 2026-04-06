@@ -10,6 +10,13 @@ import {
 
 let googleInitPromise;
 let googlePopupProxyContainer;
+const ONBOARDING_PAGE = 'onboarding.html';
+
+function getCurrentPageName() {
+    const pathname = window.location.pathname || '';
+    const page = pathname.split('/').pop();
+    return page || 'index.html';
+}
 
 function normalizeUser(payload) {
     if (!payload || typeof payload !== 'object') {
@@ -43,6 +50,26 @@ function normalizeUser(payload) {
         instagramId: source.instagram_id || '',
         role: source.role || 'user'
     };
+}
+
+// If NOT (has hostel AND has contact) -> onboarding required.
+export function needsOnboarding(session) {
+    if (!session || !session.user) {
+        return false;
+    }
+
+    const hasHostel = !!session.user.hostel;
+    const hasContact = !!session.user.phone || !!session.user.instagramId;
+
+    return !(hasHostel && hasContact);
+}
+
+export function needsOnboardingForUser(user) {
+    if (!user) {
+        return false;
+    }
+
+    return needsOnboarding({ user });
 }
 
 function getStoredAccessToken() {
@@ -317,6 +344,12 @@ export function initGoogleLogin() {
         }
 
         setAuthButtonsState(loginButton, logoutButton, user);
+
+        if (needsOnboardingForUser(user)) {
+            window.location.href = ONBOARDING_PAGE;
+            return;
+        }
+
         window.location.href = 'profile.html';
     };
 
@@ -342,6 +375,11 @@ export function initGoogleLogin() {
 
     fetchCurrentUser().then((user) => {
         setAuthButtonsState(loginButton, logoutButton, user);
+
+        const currentPage = getCurrentPageName();
+        if (user && needsOnboardingForUser(user) && currentPage === 'report.html') {
+            window.location.href = ONBOARDING_PAGE;
+        }
     });
 
     if (loginButton) {

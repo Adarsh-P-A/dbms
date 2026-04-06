@@ -285,6 +285,36 @@ h1 {
     max-width: 600px;
 }
 
+.onboarding-form-container {
+    max-width: 680px;
+}
+
+.onboarding-subtitle {
+    margin-bottom: 18px;
+    color: #505a64;
+}
+
+.onboarding-status {
+    margin-bottom: 18px;
+    background: #f0f5ff;
+    color: #1d3d67;
+    border: 1px solid #cfe0fb;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.onboarding-status.is-error {
+    background: #fff2f2;
+    color: #8d2424;
+    border-color: #f1c2c2;
+}
+
+.onboarding-hint {
+    margin-top: 6px;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
 .form-group {
     margin-bottom: 20px;
     display: flex;

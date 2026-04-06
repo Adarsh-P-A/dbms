@@ -3,6 +3,7 @@ import { initGoogleLogin } from './auth.js';
 import { initProfile } from './profile.js';
 import { initReportForm } from './report-form.js';
 import { initNotifications } from './notifications.js';
+import { initOnboarding } from './onboarding.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
@@ -10,4 +11,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initProfile();
     initReportForm();
     initNotifications();
+    initOnboarding();
 });

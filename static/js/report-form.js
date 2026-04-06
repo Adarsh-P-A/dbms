@@ -1,4 +1,4 @@
-import { fetchCurrentUser } from './auth.js';
+import { fetchCurrentUser, needsOnboardingForUser } from './auth.js';
 import { ACCESS_TOKEN_STORAGE_KEY, API_BASE_URL } from './config.js';
 
 const ITEM_CREATE_ENDPOINT = '/items/create';
@@ -219,6 +219,14 @@ export function initReportForm() {
         return;
     }
 
+    // Prevent onboarding-incomplete users from accessing report creation.
+    fetchCurrentUser().then((user) => {
+        if (user && needsOnboardingForUser(user)) {
+            alert('Complete onboarding before reporting a new item.');
+            window.location.href = 'onboarding.html';
+        }
+    });
+
     const getFieldValue = (id) => {
         const field = document.getElementById(id);
         return field ? field.value.trim() : '';
@@ -243,6 +251,12 @@ export function initReportForm() {
         const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
         if (!user || !token) {
             alert('Please log in to submit a report.');
+            return;
+        }
+
+        if (needsOnboardingForUser(user)) {
+            alert('Complete onboarding before reporting a new item.');
+            window.location.href = 'onboarding.html';
             return;
         }
 
