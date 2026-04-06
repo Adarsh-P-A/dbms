@@ -19,13 +19,6 @@ function setStatus(statusElement, message, isError = false) {
     statusElement.classList.toggle('is-error', isError);
 }
 
-function setFormDisabledState(form, disabled) {
-    const controls = form.querySelectorAll('input, select, textarea, button');
-    for (const control of controls) {
-        control.disabled = disabled;
-    }
-}
-
 async function getApiErrorMessage(response) {
     try {
         const payload = await response.json();
@@ -72,8 +65,7 @@ export async function initOnboarding() {
 
     const user = await fetchCurrentUser();
     if (!user) {
-        setStatus(statusElement, 'Please log in to continue onboarding.', true);
-        setFormDisabledState(form, true);
+        window.location.href = 'index.html';
         return;
     }
 
