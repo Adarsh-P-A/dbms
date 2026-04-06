@@ -130,9 +130,9 @@
     display: flex;
 }
 
-.badge.category { background: #f3f4f6; color: #4b5563; }
-.badge.type { background: #f3f4f6; color: #4b5563; }
-.badge.visibility { background: #f3f4f6; color: #4b5563; }
+.badge.category { font-size: x-small; background: #f3f4f6; color: #4b5563; }
+.badge.type { font-size: x-small; background: #f3f4f6; color: #4b5563; }
+.badge.visibility { font-size: x-small; background: #f3f4f6; color: #4b5563; }
 
 
 /* Meta Information List */

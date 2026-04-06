@@ -42,7 +42,7 @@ import { backendData } from './backendData.js';
 
         // Populate standard text fields
         document.getElementById('detail-title').textContent = currentItem.title;
-        document.getElementById('detail-category').textContent = currentItem.type;
+        document.getElementById('detail-category').textContent = currentItem.category;
         document.getElementById('detail-type').textContent = currentItem.type;
         document.getElementById('detail-visibility').textContent = `Visibility: ${currentItem.visibility}`;
         
