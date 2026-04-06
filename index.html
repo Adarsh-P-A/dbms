@@ -34,55 +34,24 @@
 
             <section class="content">
                 <h1>Recent Items</h1>
-                <div class="items-grid" id="itemsGrid">
-                    <div class="item-card">
-                        <div class="image-placeholder"></div>
-                        <div class="card-info">
-                            <div class="line short"></div>
-                            <div class="line long"></div>
-                        </div>
-                    </div>
-                    <div class="item-card">
-                        <div class="image-placeholder"></div>
-                        <div class="card-info">
-                            <div class="line short"></div>
-                            <div class="line long"></div>
-                        </div>
-                    </div>
-                    <div class="item-card">
-                        <div class="image-placeholder"></div>
-                        <div class="card-info">
-                            <div class="line short"></div>
-                            <div class="line long"></div>
-                        </div>
-                    </div>
-                    <div class="item-card">
-                        <div class="image-placeholder"></div>
-                        <div class="card-info">
-                            <div class="line short"></div>
-                            <div class="line long"></div>
-                        </div>
-                    </div>
-                    <div class="item-card">
-                        <div class="image-placeholder"></div>
-                        <div class="card-info">
-                            <div class="line short"></div>
-                            <div class="line long"></div>
-                        </div>
-                    </div>
-                    <div class="item-card">
-                        <div class="image-placeholder"></div>
-                        <div class="card-info">
-                            <div class="line short"></div>
-                            <div class="line long"></div>
-                        </div>
-                    </div>
+                
+                <div class="controls" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                    <input type="text" id="searchInput" placeholder="Search by title or place..." style="padding: 8px; flex: 1;">
+                    <select id="categoryFilter" style="padding: 8px;">
+                        <option value="all">All Categories</option>
+                        <option value="technology">Technology</option>
+                        <option value="arts">Arts & Culture</option>
+                        <option value="music">Music</option>
+                    </select>
                 </div>
+
+                <div class="items-grid" id="itemsGrid">
+                    </div>
             </section>
         </main>
     </div>
 
-    <script src="static/js/script.js"></script>
+    <script type="module" src="static/js/script_index.js"></script>
 </body>
 
 </html>
