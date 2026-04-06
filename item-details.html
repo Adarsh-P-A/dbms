@@ -83,6 +83,18 @@
         </main>
     </div>
 
+    <div id="action-modal" class="modal hidden" aria-hidden="true" role="dialog" aria-labelledby="action-modal-title">
+        <div class="modal-backdrop" id="modal-backdrop"></div>
+        <div class="modal-panel" role="document">
+            <h2 id="action-modal-title">Write a message</h2>
+            <textarea id="action-message" placeholder="Write a msg" rows="5"></textarea>
+            <div class="modal-actions">
+                <button type="button" id="modal-cancel" class="secondary-btn">Cancel</button>
+                <button type="button" id="modal-submit" class="primary-btn">Submit</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="static/js/script_itemdetails.js"></script>
 </body>
 

@@ -62,4 +62,43 @@ import { backendData } from './backendData.js';
             <h1 style="color: red; text-align: center;">Item Not Found</h1>
             <p style="text-align: center;"><a href="index.html">Return to Home</a></p>
         `;
-}
+    }
+
+    const actionBtn = document.querySelector('.primary-action-btn');
+    const modal = document.getElementById('action-modal');
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const modalCancel = document.getElementById('modal-cancel');
+    const modalSubmit = document.getElementById('modal-submit');
+    const messageInput = document.getElementById('action-message');
+
+    const openModal = () => {
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        messageInput?.focus();
+    };
+
+    const closeModal = () => {
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        if (messageInput) {
+            messageInput.value = '';
+        }
+    };
+
+    actionBtn?.addEventListener('click', openModal);
+    modalBackdrop?.addEventListener('click', closeModal);
+    modalCancel?.addEventListener('click', closeModal);
+    modalSubmit?.addEventListener('click', () => {
+        if (!messageInput) return;
+        const message = messageInput.value.trim();
+        if (!message) {
+            alert('Please write a message before submitting.');
+            messageInput.focus();
+            return;
+        }
+
+        alert(`Submitted message:\n${message}`);
+        closeModal();
+    });
