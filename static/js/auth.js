@@ -27,7 +27,7 @@ function normalizeUser(payload) {
 
     const name = source.name || '';
     const email = source.email || '';
-    const image = source.image || '';
+    const image = source.image || source.picture || source.avatar || '';
 
     if (!name && !email && !source.public_id) {
         return null;
