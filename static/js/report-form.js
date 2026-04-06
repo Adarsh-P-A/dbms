@@ -129,6 +129,47 @@ function normalizeDateInput(rawDate) {
     return '';
 }
 
+function getAllowedVisibilitiesForUser(user) {
+    if (!user || !user.hostel) {
+        return ALLOWED_VISIBILITIES;
+    }
+
+    if (user.hostel === 'boys') {
+        return new Set(['public', 'boys']);
+    }
+
+    if (user.hostel === 'girls') {
+        return new Set(['public', 'girls']);
+    }
+
+    return ALLOWED_VISIBILITIES;
+}
+
+function applyVisibilityRestrictions(user) {
+    const visibilityField = document.getElementById('visibility');
+    if (!visibilityField) {
+        return;
+    }
+
+    const allowedVisibilities = getAllowedVisibilitiesForUser(user);
+
+    for (const option of visibilityField.options) {
+        if (!option.value) {
+            option.disabled = false;
+            option.hidden = false;
+            continue;
+        }
+
+        const isAllowed = allowedVisibilities.has(option.value);
+        option.disabled = !isAllowed;
+        option.hidden = !isAllowed;
+    }
+
+    if (visibilityField.value && !allowedVisibilities.has(visibilityField.value)) {
+        visibilityField.value = allowedVisibilities.has('public') ? 'public' : '';
+    }
+}
+
 function validateFormPayload(payload) {
     if (!ALLOWED_ITEM_TYPES.has(payload.itemType)) {
         return 'Invalid item type selected.';
@@ -221,6 +262,8 @@ export function initReportForm() {
 
     // Prevent onboarding-incomplete users from accessing report creation.
     fetchCurrentUser().then((user) => {
+        applyVisibilityRestrictions(user);
+
         if (user && needsOnboardingForUser(user)) {
             alert('Complete onboarding before reporting a new item.');
             window.location.href = 'onboarding.html';
@@ -279,6 +322,16 @@ export function initReportForm() {
         const category = normalizeCategory(categoryRaw);
         const location = normalizeLocation(locationRaw);
         const itemDate = normalizeDateInput(dateRaw);
+
+        const allowedVisibilities = getAllowedVisibilitiesForUser(user);
+        if (!allowedVisibilities.has(visibility)) {
+            alert('You can only post with your hostel visibility or public visibility.');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonLabel || 'Submit Report';
+            }
+            return;
+        }
 
         const validationMessage = validateFormPayload({
             itemType,
