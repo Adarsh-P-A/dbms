@@ -27,32 +27,20 @@
                 <div class="menu-icon" id="openMenu">☰</div>
                 <div class="title">Retrievo</div>
                 <div class="login-container">
-                    <span>login</span>
+                    <button type="button" class="login-btn" data-google-login>Login with Google</button>
+                    <button type="button" class="logout-btn" data-logout-button hidden>Logout</button>
                 </div>
             </header>
 
             <section class="content">
                 <h1>Notifications</h1>
-                <div class="notification-list">
-                    <div class="notification-item unread">
-                        <p><strong>Match Alert:</strong> A blue backpack matching your report was found at the Library.
-                        </p>
-                        <span class="time">10 mins ago</span>
-                    </div>
-                    <div class="notification-item">
-                        <p><strong>Status Update:</strong> Your lost item report "Wireless Mouse" has been approved.</p>
-                        <span class="time">2 hours ago</span>
-                    </div>
-                    <div class="notification-item">
-                        <p><strong>System Message:</strong> Welcome to the Campus Lost and Found portal!</p>
-                        <span class="time">1 day ago</span>
-                    </div>
-                </div>
+                <p id="notificationsState" class="notifications-state">Loading notifications...</p>
+                <div class="notification-list" id="notificationList"></div>
             </section>
         </main>
     </div>
 
-    <script src="static/js/script.js"></script>
+    <script type="module" src="static/js/main.js"></script>
 </body>
 
 </html>
