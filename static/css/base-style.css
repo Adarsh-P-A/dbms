@@ -142,6 +142,23 @@ body.sidebar-open .menu-icon {
     color: #1a4f8b;
 }
 
+.logout-btn {
+    border: 1px solid #d7b6b6;
+    background: #fff7f7;
+    color: #8b2d2d;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background: #ffe8e8;
+    border-color: #c98f8f;
+}
+
 .profile-icon {
     width: 40px;
     height: 40px;
