@@ -2,6 +2,7 @@ import { fetchCurrentUser } from './auth.js';
 import { ACCESS_TOKEN_STORAGE_KEY, API_BASE_URL } from './config.js';
 
 const ITEMS_ENDPOINT = '/items';
+const RESOLUTIONS_ENDPOINT = '/resolutions';
 
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -75,6 +76,25 @@ function hideDetailState() {
     stateElement.hidden = true;
 }
 
+function showMessageModal() {
+    const modal = document.getElementById('messageModal');
+    if (modal) {
+        modal.removeAttribute('hidden');
+    }
+}
+
+function hideMessageModal() {
+    const modal = document.getElementById('messageModal');
+    if (modal) {
+        modal.setAttribute('hidden', '');
+        // Clear the input
+        const textarea = document.getElementById('messageInput');
+        if (textarea) {
+            textarea.value = '';
+        }
+    }
+}
+
 async function fetchItemDetails(itemId) {
     const response = await fetch(`${API_BASE_URL}${ITEMS_ENDPOINT}/${itemId}`, {
         method: 'GET'
@@ -85,11 +105,38 @@ async function fetchItemDetails(itemId) {
     }
 
     const payload = await response.json();
-    return payload.item || payload;
+    // Return the full payload which includes item, reporter, and claim_status
+    return payload;
 }
 
-function renderItemDetails(item, currentUser) {
+async function createResolution(itemId, message, token) {
+    const payload = {
+        item_id: itemId,
+        description: message
+    };
+
+    const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/create`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to create resolution (${response.status})`);
+    }
+
+    return await response.json();
+}
+
+function renderItemDetails(itemData, currentUser) {
     const contentDiv = document.getElementById('itemDetailContent');
+    
+    // Handle both full response object and plain item object for backwards compatibility
+    const item = itemData.item || itemData;
+    const reporter = itemData.reporter || null;
     
     // Set image
     const image = document.getElementById('itemImage');
@@ -118,32 +165,40 @@ function renderItemDetails(item, currentUser) {
     document.getElementById('itemLocation').textContent = formatLocation(item.location);
     document.getElementById('itemDate').textContent = formatDate(item.date);
     
-    // Set owner info
+    // Set owner/reporter info
     const ownerInfo = document.getElementById('itemOwnerInfo');
-    if (item.owner && item.owner.name) {
-        ownerInfo.textContent = `${item.owner.name}`;
-    } else if (item.owner_id) {
-        ownerInfo.textContent = 'Posted by another user';
+    if (reporter && reporter.name) {
+        ownerInfo.textContent = `${reporter.name}`;
     } else {
-        ownerInfo.textContent = 'Posted by anonymous user';
+        ownerInfo.textContent = 'Posted by another user';
     }
     
     // Show/hide action buttons based on user and item type
     const claimButton = document.getElementById('claimButton');
     const reportButton = document.getElementById('reportButton');
     
-    // Show claim button for found items or return for lost items
-    if (item.type === 'found' || item.type === 'lost') {
-        claimButton.style.display = 'inline-block';
-        if (item.type === 'found') {
-            claimButton.textContent = 'Claim - I Found It';
-        } else {
-            claimButton.textContent = 'Report - I Have It';
-        }
+    // Check if current user is the item creator (reporter)
+    // Only hide claim button if user is logged in AND is the item creator
+    let isItemCreator = false;
+    if (currentUser && currentUser.publicId && reporter && reporter.public_id) {
+        isItemCreator = currentUser.publicId === reporter.public_id;
     }
     
-    // Show report button for everyone
-    reportButton.style.display = 'inline-block';
+    // Show claim button only for found/lost items and only if user is NOT the creator
+    if ((item.type === 'found' || item.type === 'lost') && !isItemCreator) {
+        claimButton.style.display = 'inline-block';
+        reportButton.style.display = 'inline-block';
+        if (item.type === 'found') {
+            claimButton.textContent = 'This is mine';
+            
+        } else {
+            claimButton.textContent = 'I found it';
+        }
+    } else {
+        claimButton.style.display = 'none';
+    }
+    
+    
     
     // Add event listeners
     claimButton.onclick = () => handleClaimItem(item);
@@ -153,13 +208,75 @@ function renderItemDetails(item, currentUser) {
 }
 
 function handleClaimItem(item) {
-    alert(`You claimed item: ${item.title}`);
-    // TODO: Navigate to resolution creation page or show resolution modal
+    // Store item data for modal submission
+    window.currentItemForClaim = item;
+    showMessageModal();
 }
 
 function handleReportItem(item) {
     // Navigate to report page with item ID pre-filled
     window.location.href = `report.html?itemId=${item.id}`;
+}
+
+async function handleMessageSubmit() {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    const item = window.currentItemForClaim;
+    
+    if (!item) {
+        alert('Error: Item information not found');
+        return;
+    }
+    
+    // Validate message length (20-280 characters as per backend requirement)
+    if (message.length < 20) {
+        alert('Message must be at least 20 characters long');
+        messageInput.focus();
+        return;
+    }
+    
+    if (message.length > 280) {
+        alert('Message cannot exceed 280 characters');
+        messageInput.focus();
+        return;
+    }
+    
+    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (!token) {
+        alert('Please log in to proceed');
+        hideMessageModal();
+        return;
+    }
+    
+    try {
+        // Show loading state
+        const submitBtn = document.getElementById('messageSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        // Create resolution with the message
+        await createResolution(item.id, message, token);
+        
+        hideMessageModal();
+        alert('Request submitted successfully! Redirecting to notifications...');
+        
+        // Redirect to notifications page (since API only returns {"ok": true})
+        window.location.href = 'notifications.html';
+    } catch (error) {
+        console.error('Error creating resolution:', error);
+        
+        // Check for specific error about own item
+        if (error.message.includes('400') || error.message.includes('own')) {
+            alert('You cannot claim your own item');
+        } else {
+            alert('Failed to submit request: ' + error.message);
+        }
+        
+        // Reset button
+        const submitBtn = document.getElementById('messageSubmitBtn');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+    }
 }
 
 export async function initItemDetail() {
@@ -172,21 +289,95 @@ export async function initItemDetail() {
     
     setDetailState('Loading item details...');
     
+    // Set up modal event listeners
+    const messageModal = document.getElementById('messageModal');
+    const messageCancelBtn = document.getElementById('messageCancelBtn');
+    const messageSubmitBtn = document.getElementById('messageSubmitBtn');
+    const modalCloseBtn = document.querySelector('.modal-close-btn');
+    const messageInput = document.getElementById('messageInput');
+    const charCount = document.getElementById('charCount');
+    
+    // Disable submit button initially
+    if (messageSubmitBtn) {
+        messageSubmitBtn.disabled = true;
+    }
+    
+    if (messageCancelBtn) {
+        messageCancelBtn.onclick = hideMessageModal;
+    }
+    
+    if (messageSubmitBtn) {
+        messageSubmitBtn.onclick = handleMessageSubmit;
+    }
+    
+    if (modalCloseBtn) {
+        modalCloseBtn.onclick = hideMessageModal;
+    }
+    
+    // Add character counter listener
+    if (messageInput) {
+        messageInput.addEventListener('input', () => {
+            const count = messageInput.value.length;
+            if (charCount) {
+                charCount.textContent = count;
+            }
+            
+            // Update counter color based on character count
+            const counterElement = document.querySelector('.message-counter');
+            if (counterElement) {
+                counterElement.classList.remove('warning', 'error');
+                if (count < 20) {
+                    counterElement.classList.add('error');
+                } else if (count > 250) {
+                    counterElement.classList.add('warning');
+                }
+            }
+            
+            // Disable/enable submit button based on character count
+            if (messageSubmitBtn) {
+                messageSubmitBtn.disabled = count < 20 || count > 280;
+            }
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (messageModal) {
+        messageModal.onclick = (e) => {
+            if (e.target === messageModal) {
+                hideMessageModal();
+            }
+        };
+    }
+    
     try {
-        const item = await fetchItemDetails(itemId);
+        const itemData = await fetchItemDetails(itemId);
         
+        if (!itemData) {
+            setDetailState('Item not found.', true);
+            return;
+        }
+        
+        // Verify we have at least the item data
+        const item = itemData.item || itemData;
         if (!item) {
             setDetailState('Item not found.', true);
             return;
         }
         
         // Optionally fetch current user for contextual actions
-        const currentUser = await fetchCurrentUser();
+        let currentUser = null;
+        try {
+            currentUser = await fetchCurrentUser();
+        } catch (e) {
+            // User not logged in, that's okay
+            console.log('User not logged in');
+        }
         
         hideDetailState();
-        renderItemDetails(item, currentUser);
+        renderItemDetails(itemData, currentUser);
     } catch (error) {
         console.error('Error loading item details:', error);
         setDetailState('Unable to load item details. Please try again.', true);
     }
 }
+

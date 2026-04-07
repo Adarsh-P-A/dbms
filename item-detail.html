@@ -79,6 +79,26 @@
 
     </div>
 
+    <!-- Message Modal -->
+    <div id="messageModal" class="modal" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add a Message</h2>
+                <button type="button" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="messageInput" class="message-input" placeholder="Add any additional information..." rows="6"></textarea>
+                <div class="message-counter">
+                    <span id="charCount">0</span>/280 characters
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="messageCancelBtn" type="button" class="btn-secondary">Cancel</button>
+                <button id="messageSubmitBtn" type="button" class="btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="static/js/main.js"></script>
     <script type="module" src="static/js/item-detail.js"></script>
 </body>
