@@ -86,6 +86,15 @@ function renderNotifications(listElement, notifications) {
 
         item.appendChild(message);
         item.appendChild(time);
+        
+        // Add click handler to navigate to resolution page if resolution_id exists
+        if (notification.resolution_id) {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                window.location.href = `resolution.html?id=${notification.resolution_id}`;
+            });
+        }
+        
         listElement.appendChild(item);
     }
 }

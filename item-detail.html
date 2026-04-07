@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Details - Retrievo</title>
+    <link rel="stylesheet" href="static/css/base-style.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="close-btn">X</div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html">Browse Items</a>
+                <a href="profile.html">My profile</a>
+                <a href="notifications.html">Notifications</a>
+                <a href="report.html">Report item</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="menu-icon" id="openMenu">☰</div>
+                <div class="title">Retrievo</div>
+                <div class="login-container">
+                    <button type="button" class="login-btn" data-google-login>Login with Google</button>
+                    <button type="button" class="logout-btn" data-logout-button hidden>Logout</button>
+                </div>
+            </header>
+
+            <section class="content">
+                <div id="itemDetailState" class="item-detail-state">Loading item details...</div>
+                
+                <div id="itemDetailContent" hidden>
+                    <a href="index.html" class="back-link">← Back to Items</a>
+                    
+                    <div class="item-detail-container">
+                        <div class="item-detail-image">
+                            <img id="itemImage" src="" alt="Item image">
+                        </div>
+                        
+                        <div class="item-detail-info">
+                            <div class="item-detail-badge" id="itemBadge"></div>
+                            <h1 id="itemTitle"></h1>
+                            
+                            <div class="item-detail-section">
+                                <h3>Description</h3>
+                                <p id="itemDescription"></p>
+                            </div>
+                            
+                            <div class="item-detail-section">
+                                <h3>Details</h3>
+                                <p><strong>Type:</strong> <span id="itemType"></span></p>
+                                <p><strong>Category:</strong> <span id="itemCategory"></span></p>
+                                <p><strong>Location:</strong> <span id="itemLocation"></span></p>
+                                <p><strong>Date:</strong> <span id="itemDate"></span></p>
+                            </div>
+                            
+                            <div class="item-detail-section">
+                                <h3>Posted By</h3>
+                                <p id="itemOwnerInfo"></p>
+                            </div>
+                            
+                            <div class="item-detail-actions" id="itemActions">
+                                <button id="claimButton" class="btn-primary" style="display: none;">Claim / Report Found</button>
+                                <button id="reportButton" class="btn-secondary" style="display: none;">Report Item</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <script type="module" src="static/js/main.js"></script>
+    <script type="module" src="static/js/item-detail.js"></script>
+</body>
+
+</html>
