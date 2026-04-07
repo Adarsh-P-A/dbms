@@ -9,6 +9,10 @@ h1 {
     margin-bottom: 12px;
     color: #111827;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
 }
 
 .subtitle {
@@ -71,6 +75,24 @@ h1 {
     background-color: #e9ecef;
 }
 
+.approve {
+    background-color: #28a745;
+    color: white;
+}
+
+.approve:hover {
+    background-color: #218838;
+}
+
+.invalidate {
+    background-color: #dc3545;
+    color: white;
+}
+
+.invalidate:hover {
+    background-color: #c82333;
+}
+
 .small {
     color: #6b7280;
     font-size: 14px;
@@ -90,4 +112,54 @@ h1 {
     border-radius: 8px;
     border: 1px solid #ddd;
     background: #f3f4f6;
+}
+
+.back-link {
+    color: #0056b3;
+    text-decoration: none;
+    margin-bottom: 20px;
+    display: inline-block;
+    font-size: 0.95rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.status-pending {
+    background-color: #fbbf24;
+}
+
+.status-approved {
+    background-color: #10b981;
+}
+
+.status-rejected {
+    background-color: #ef4444;
+}
+
+.status-completed {
+    background-color: #0ea5e9;
+}
+
+.status-invalidated {
+    background-color: #6b7280;
+}
+
+.resolution-detail-state {
+    margin-bottom: 16px;
+    color: #475569;
+}
+
+.resolution-detail-state-error {
+    color: #8d2424;
 }

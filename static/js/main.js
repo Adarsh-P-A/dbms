@@ -5,6 +5,8 @@ import { initReportForm } from './report-form.js';
 import { initNotifications } from './notifications.js';
 import { initOnboarding } from './onboarding.js';
 import { initItemsFeed } from './items.js';
+import { initItemDetail } from './item-detail.js';
+import { initResolutionDetail } from './resolution-detail.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
@@ -14,4 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initNotifications();
     initOnboarding();
     initItemsFeed();
+    initItemDetail();
+    initResolutionDetail();
 });

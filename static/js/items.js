@@ -136,7 +136,13 @@ function createItemCard(item) {
     ctaButton.type = 'button';
     ctaButton.className = 'btn-primary item-card-button';
     ctaButton.textContent = 'View Details';
-    ctaButton.disabled = true;
+    
+    // Add click handler to navigate to item detail page
+    ctaButton.addEventListener('click', () => {
+        if (item.id) {
+            window.location.href = `item-detail.html?id=${item.id}`;
+        }
+    });
 
     media.appendChild(image);
     media.appendChild(badge);

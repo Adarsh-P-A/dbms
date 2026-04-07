@@ -443,3 +443,245 @@ h1 {
 .btn-primary:hover {
     background-color: #555;
 }
+
+.btn-secondary {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.btn-secondary:hover {
+    background-color: #f0f0f0;
+}
+
+/* Item Detail Page Styling */
+.item-detail-state {
+    margin-bottom: 16px;
+    color: #475569;
+}
+
+.item-detail-state-error {
+    color: #8d2424;
+}
+
+.back-link {
+    color: #0056b3;
+    text-decoration: none;
+    margin-bottom: 20px;
+    display: inline-block;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.item-detail-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    max-width: 1000px;
+}
+
+.item-detail-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    border-radius: 8px;
+    min-height: 400px;
+}
+
+.item-detail-image img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.item-detail-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-detail-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    background: #6b7280;
+    width: fit-content;
+    margin-bottom: 12px;
+}
+
+.item-detail-badge-lost {
+    background: #dc2626;
+}
+
+.item-detail-badge-found {
+    background: #d97706;
+}
+
+.item-detail-info h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #111827;
+}
+
+.item-detail-section {
+    margin-bottom: 24px;
+}
+
+.item-detail-section h3 {
+    font-size: 1.1rem;
+    color: #111827;
+    margin-bottom: 12px;
+}
+
+.item-detail-section p {
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.item-detail-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 800px) {
+    .item-detail-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+/* Modal Styling */
+.modal {
+    display: flex;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal[hidden] {
+    display: none;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #111827;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    color: #111827;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.message-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    resize: vertical;
+}
+
+.message-input:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+}
+
+.message-counter {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.message-counter.warning {
+    color: #f59e0b;
+}
+
+.message-counter.error {
+    color: #dc2626;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 24px;
+    border-top: 1px solid #e5e7eb;
+    justify-content: flex-end;
+}
+
+.modal-footer button {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modal-footer .btn-primary {
+    margin-top: 0;
+}
+
+.modal-footer .btn-secondary {
+    margin-top: 0;
+}
+
