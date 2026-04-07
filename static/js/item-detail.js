@@ -160,6 +160,7 @@ function renderItemDetails(itemData, currentUser) {
     document.getElementById('itemDescription').textContent = item.description || 'No description provided';
     
     // Set details
+    document.getElementById('itemVisibility').textContent = item.visibility || 'Unknown';
     document.getElementById('itemType').textContent = getTypeLabel(item.type);
     document.getElementById('itemCategory').textContent = item.category || 'Uncategorized';
     document.getElementById('itemLocation').textContent = formatLocation(item.location);
