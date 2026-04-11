@@ -6,7 +6,7 @@ import { initNotifications } from './notifications.js';
 import { initOnboarding } from './onboarding.js';
 import { initItemsFeed } from './items.js';
 import { initItemDetail } from './item-detail.js';
-import { initResolutionDetail } from './resolution-detail.js';
+// import { initResolutionDetail } from './resolution-detail.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
@@ -17,5 +17,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initOnboarding();
     initItemsFeed();
     initItemDetail();
-    initResolutionDetail();
+    // initResolutionDetail();
 });

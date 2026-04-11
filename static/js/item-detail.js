@@ -131,7 +131,7 @@ async function createResolution(itemId, message, token) {
     return await response.json();
 }
 
-function renderItemDetails(itemData, currentUser) {
+function renderItemDetails(itemData, claimStatus, currentUser) {
     const contentDiv = document.getElementById('itemDetailContent');
     
     // Handle both full response object and plain item object for backwards compatibility
@@ -173,11 +173,11 @@ function renderItemDetails(itemData, currentUser) {
     } else {
         ownerInfo.textContent = 'Posted by another user';
     }
-    
+
     // Show/hide action buttons based on user and item type
     const claimButton = document.getElementById('claimButton');
     const reportButton = document.getElementById('reportButton');
-    
+
     // Check if current user is the item creator (reporter)
     // Only hide claim button if user is logged in AND is the item creator
     let isItemCreator = false;
@@ -185,26 +185,39 @@ function renderItemDetails(itemData, currentUser) {
         isItemCreator = currentUser.publicId === reporter.public_id;
     }
     
-    // Show claim button only for found/lost items and only if user is NOT the creator
-    if ((item.type === 'found' || item.type === 'lost') && !isItemCreator) {
+    // Show actions only when item has no active claim state.
+    // Invariant: claimStatus === 'none' means no claim exists; any other value means a claim/resolution exists.
+    const normalizedClaimStatus = claimStatus || 'none';
+    const hasActiveResolution = normalizedClaimStatus !== 'none';
+    const canShowActions =
+        (item.type === 'found' || item.type === 'lost') &&
+        !isItemCreator &&
+        !hasActiveResolution;
+
+    if (canShowActions) {
         claimButton.style.display = 'inline-block';
         reportButton.style.display = 'inline-block';
-        if (item.type === 'found') {
-            claimButton.textContent = 'This is mine';
-            
-        } else {
-            claimButton.textContent = 'I found it';
-        }
+        claimButton.textContent = item.type === 'found' ? 'This is mine' : 'I found it';
+
+        // Add event listeners
+        claimButton.onclick = () => {
+            const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+            if (!token) {
+                showLoginAlert();
+                return;
+            }
+
+            handleClaimItem(item);
+        };
+
+        reportButton.onclick = () => handleReportItem(item);
     } else {
         claimButton.style.display = 'none';
+        reportButton.style.display = 'none';
+        claimButton.onclick = null;
+        reportButton.onclick = null;
     }
-    
-    
-    
-    // Add event listeners
-    claimButton.onclick = () => handleClaimItem(item);
-    reportButton.onclick = () => handleReportItem(item);
-    
+
     contentDiv.hidden = false;
 }
 
@@ -214,9 +227,13 @@ function handleClaimItem(item) {
     showMessageModal();
 }
 
+function showLoginAlert() {
+    alert('Please log in to claim or return items.');
+}
+
 function handleReportItem(item) {
     // Navigate to report page with item ID pre-filled
-    window.location.href = `report.html?itemId=${item.id}`;
+    window.location.href = `report.html?id=${item.id}`;
 }
 
 async function handleMessageSubmit() {
@@ -364,9 +381,13 @@ export async function initItemDetail() {
             setDetailState('Item not found.', true);
             return;
         }
+
+        // Get the resolution status
+        const claimStatus = itemData.claim_status;
         
         // Optionally fetch current user for contextual actions
         let currentUser = null;
+        
         try {
             currentUser = await fetchCurrentUser();
         } catch (e) {
@@ -375,7 +396,7 @@ export async function initItemDetail() {
         }
         
         hideDetailState();
-        renderItemDetails(itemData, currentUser);
+        renderItemDetails(itemData, claimStatus, currentUser);
     } catch (error) {
         console.error('Error loading item details:', error);
         setDetailState('Unable to load item details. Please try again.', true);
