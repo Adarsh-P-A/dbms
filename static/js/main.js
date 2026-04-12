@@ -17,5 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initOnboarding();
     initItemsFeed();
     initItemDetail();
+
+    const adminStateElement = document.getElementById('adminState');
+    if (adminStateElement) {
+        import('./admin-dashboard.js').then(({ initAdminDashboard }) => {
+            initAdminDashboard();
+        });
+    }
+
     // initResolutionDetail();
 });

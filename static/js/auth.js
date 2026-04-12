@@ -12,6 +12,10 @@ let googleInitPromise;
 let googlePopupProxyContainer;
 const ONBOARDING_PAGE = 'onboarding.html';
 
+function emitAuthStateChanged() {
+    window.dispatchEvent(new CustomEvent('retrievo-auth-changed'));
+}
+
 function getCurrentPageName() {
     const pathname = window.location.pathname || '';
     const page = pathname.split('/').pop();
@@ -82,11 +86,14 @@ function setStoredAccessToken(token, expiresAt) {
     if (typeof expiresAt === 'number') {
         localStorage.setItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY, String(expiresAt));
     }
+
+    emitAuthStateChanged();
 }
 
 function clearStoredAccessToken() {
     localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     localStorage.removeItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+    emitAuthStateChanged();
 }
 
 function isStoredTokenExpired() {
