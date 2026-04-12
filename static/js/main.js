@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initItemsFeed();
     initItemDetail();
 
+    // Conditionally load admin dashboard if on admin page and user is admin
     const adminStateElement = document.getElementById('adminState');
     if (adminStateElement) {
         import('./admin-dashboard.js').then(({ initAdminDashboard }) => {
