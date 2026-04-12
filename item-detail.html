@@ -100,6 +100,26 @@
         </div>
     </div>
 
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Report Item</h2>
+                <button type="button" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="reportReason" class="modal-label">Select reason:</label>
+                <select id="reportReason" class="modal-select">
+                    <option value="">Choose a reason...</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button id="reportCancelBtn" type="button" class="btn-secondary">Cancel</button>
+                <button id="reportSubmitBtn" type="button" class="btn-primary">Report</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="static/js/main.js"></script>
     <script type="module" src="static/js/item-detail.js"></script>
 </body>
