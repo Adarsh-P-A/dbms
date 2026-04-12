@@ -3,6 +3,7 @@ import { ACCESS_TOKEN_STORAGE_KEY, API_BASE_URL } from './config.js';
 
 const ITEMS_ENDPOINT = '/items';
 const RESOLUTIONS_ENDPOINT = '/resolutions';
+const REPORT_REASONS = ['spam', 'inappropriate', 'harassment', 'fake', 'duplicate', 'other'];
 
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -131,6 +132,73 @@ async function createResolution(itemId, message, token) {
     return await response.json();
 }
 
+async function getApiErrorMessage(response, fallback) {
+    try {
+        const { detail } = await response.json();
+        if (typeof detail === 'string') return detail;
+        return detail?.[0]?.msg || detail?.[0] || fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+async function reportItem(itemId, reason, token) {
+    const response = await fetch(`${API_BASE_URL}${ITEMS_ENDPOINT}/${itemId}/report`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+    });
+
+    if (!response.ok) {
+        const errorMessage = await getApiErrorMessage(
+            response,
+            `Failed to report item (${response.status})`
+        );
+        throw new Error(errorMessage);
+    }
+
+    return await response.json();
+}
+
+function populateReportReasons() {
+    const select = document.getElementById('reportReason');
+    if (!select) return;
+    
+    REPORT_REASONS.forEach(reason => {
+        const option = document.createElement('option');
+        option.value = reason;
+        option.textContent = reason.charAt(0).toUpperCase() + reason.slice(1);
+        select.appendChild(option);
+    });
+}
+
+async function promptReportReason() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('reportModal');
+        const select = document.getElementById('reportReason');
+        const submitBtn = document.getElementById('reportSubmitBtn');
+        const cancelBtn = document.getElementById('reportCancelBtn');
+        const closeBtn = modal.querySelector('.modal-close-btn');
+        
+        const resolveAndClean = (value) => {
+            modal.setAttribute('hidden', '');
+            resolve(value);
+        };
+        
+        submitBtn.onclick = () => resolveAndClean(select.value);
+        cancelBtn.onclick = () => resolveAndClean(null);
+        closeBtn.onclick = () => resolveAndClean(null);
+        modal.onclick = (e) => e.target === modal && resolveAndClean(null);
+        
+        modal.removeAttribute('hidden');
+        select.value = '';
+        select.focus();
+    });
+}
+
 function renderItemDetails(itemData, claimStatus, currentUser) {
     const contentDiv = document.getElementById('itemDetailContent');
     
@@ -141,7 +209,7 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
     // Set image
     const image = document.getElementById('itemImage');
     image.src = normalizeImageUrl(item.image);
-    image.alt = item.title || 'Item image';
+    image.alt = item.title || 'Item Image';
     
     // Set badge
     const badge = document.getElementById('itemBadge');
@@ -169,7 +237,11 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
     // Set owner/reporter info
     const ownerInfo = document.getElementById('itemOwnerInfo');
     if (reporter && reporter.name) {
-        ownerInfo.textContent = `${reporter.name}`;
+        if (currentUser && currentUser.publicId && reporter.public_id && currentUser.publicId === reporter.public_id) {
+            ownerInfo.textContent = `${reporter.name} (You)`;
+        } else {
+            ownerInfo.textContent = `${reporter.name}`;
+        }
     } else {
         ownerInfo.textContent = 'Posted by another user';
     }
@@ -187,34 +259,27 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
     
     // Show actions only when item has no active claim state.
     // Invariant: claimStatus === 'none' means no claim exists; any other value means a claim/resolution exists.
-    const normalizedClaimStatus = claimStatus || 'none';
-    const hasActiveResolution = normalizedClaimStatus !== 'none';
-    const canShowActions =
-        (item.type === 'found' || item.type === 'lost') &&
-        !isItemCreator &&
-        !hasActiveResolution;
+    const hasActiveResolution = claimStatus !== 'none';
+    const canShowActions = !isItemCreator && !hasActiveResolution;
 
     if (canShowActions) {
         claimButton.style.display = 'inline-block';
-        reportButton.style.display = 'inline-block';
-        claimButton.textContent = item.type === 'found' ? 'This is mine' : 'I found it';
+        claimButton.textContent = item.type === 'found' ? 'This is Mine' : 'I Found It';
 
         // Add event listeners
         claimButton.onclick = () => {
-            const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-            if (!token) {
-                showLoginAlert();
-                return;
-            }
-
             handleClaimItem(item);
         };
-
-        reportButton.onclick = () => handleReportItem(item);
     } else {
         claimButton.style.display = 'none';
+        claimButton.onclick = null
+    }
+
+    if (!isItemCreator) {
+        reportButton.style.display = 'inline-block';
+        reportButton.onclick = () => handleReportItem(item, reportButton);
+    } else {
         reportButton.style.display = 'none';
-        claimButton.onclick = null;
         reportButton.onclick = null;
     }
 
@@ -222,6 +287,12 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
 }
 
 function handleClaimItem(item) {
+    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (!token) {
+        showLoginAlert();
+        return;
+    }
+
     // Store item data for modal submission
     window.currentItemForClaim = item;
     showMessageModal();
@@ -231,9 +302,41 @@ function showLoginAlert() {
     alert('Please log in to claim or return items.');
 }
 
-function handleReportItem(item) {
-    // Navigate to report page with item ID pre-filled
-    window.location.href = `report.html?id=${item.id}`;
+async function handleReportItem(item, reportButton) {
+    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (!token) {
+        alert('Please log in to report items.');
+        return;
+    }
+
+    const reason = await promptReportReason();
+    if (reason === null) {
+        return;
+    }
+
+    if (!reason) {
+        alert(`Invalid reason. Please select one.`);
+        return;
+    }
+
+    const originalLabel = reportButton ? reportButton.textContent : '';
+    if (reportButton) {
+        reportButton.disabled = true;
+        reportButton.textContent = 'Reporting...';
+    }
+
+    try {
+        await reportItem(item.id, reason, token);
+        alert('Item reported successfully. Thank you for helping keep the platform safe.');
+    } catch (error) {
+        console.error('Error reporting item:', error);
+        alert(error.message || 'Failed to report item. Please try again.');
+    } finally {
+        if (reportButton) {
+            reportButton.disabled = false;
+            reportButton.textContent = originalLabel || 'Report Item';
+        }
+    }
 }
 
 async function handleMessageSubmit() {
@@ -305,7 +408,10 @@ export async function initItemDetail() {
         return;
     }
     
-    setDetailState('Loading item details...');
+    // Populate report reasons dropdown
+    populateReportReasons();
+    
+    setDetailState('Loading Item Details...');
     
     // Set up modal event listeners
     const messageModal = document.getElementById('messageModal');
