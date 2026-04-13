@@ -1,4 +1,5 @@
 import {
+    ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY,
     ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY,
     ACCESS_TOKEN_STORAGE_KEY,
     API_BASE_URL,
@@ -10,7 +11,12 @@ import {
 
 let googleInitPromise;
 let googlePopupProxyContainer;
+let tokenRefreshIntervalId;
 const ONBOARDING_PAGE = 'onboarding.html';
+const REFRESH_INTERVAL_MS = 25 * 60 * 1000;
+const ONE_SECOND_MS = 1000;
+
+let refreshPromise = null;
 
 function emitAuthStateChanged() {
     window.dispatchEvent(new CustomEvent('retrievo-auth-changed'));
@@ -80,8 +86,19 @@ function getStoredAccessToken() {
     return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
 }
 
+function getStoredNumber(key) {
+    const rawValue = localStorage.getItem(key);
+    if (!rawValue) {
+        return null;
+    }
+
+    const parsedValue = Number(rawValue);
+    return Number.isFinite(parsedValue) ? parsedValue : null;
+}
+
 function setStoredAccessToken(token, expiresAt) {
     localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+    localStorage.setItem(ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY, String(Math.floor(Date.now() / 1000)));
 
     if (typeof expiresAt === 'number') {
         localStorage.setItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY, String(expiresAt));
@@ -93,21 +110,26 @@ function setStoredAccessToken(token, expiresAt) {
 function clearStoredAccessToken() {
     localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     localStorage.removeItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY);
     emitAuthStateChanged();
 }
 
+function isPeriodicRefreshDue() {
+    const refreshedAt = getStoredNumber(ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY);
+    if (refreshedAt === null) {
+        return true;
+    }
+
+    return Date.now() >= (refreshedAt * ONE_SECOND_MS) + REFRESH_INTERVAL_MS;
+}
+
 function isStoredTokenExpired() {
-    const expiresAtRaw = localStorage.getItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
-    if (!expiresAtRaw) {
+    const expiresAt = getStoredNumber(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+    if (expiresAt === null) {
         return false;
     }
 
-    const expiresAt = Number(expiresAtRaw);
-    if (!Number.isFinite(expiresAt)) {
-        return false;
-    }
-
-    return Date.now() >= expiresAt * 1000;
+    return Date.now() >= expiresAt * ONE_SECOND_MS;
 }
 
 async function refreshAccessToken(token) {
@@ -136,6 +158,25 @@ async function refreshAccessToken(token) {
     }
 }
 
+async function refreshAccessTokenOrClear(token) {
+    if (refreshPromise) {
+        return refreshPromise;
+    }
+
+    refreshPromise = refreshAccessToken(token)
+        .finally(() => {
+            refreshPromise = null;
+        });
+
+    const refreshedToken = await refreshPromise;
+
+    if (!refreshedToken) {
+        clearStoredAccessToken();
+    }
+
+    return refreshedToken;
+}
+
 async function fetchProfileWithToken(token) {
     const response = await fetch(`${API_BASE_URL}${PROFILE_ME_ENDPOINT}`, {
         method: 'GET',
@@ -145,6 +186,9 @@ async function fetchProfileWithToken(token) {
     });
 
     if (!response.ok) {
+        clearStoredAccessToken();
+        alert("Your account has been banned.");
+        window.location.href = "index.html";
         return null;
     }
 
@@ -160,10 +204,9 @@ export async function fetchCurrentUser() {
         }
 
         let activeToken = token;
-        if (isStoredTokenExpired()) {
-            const refreshedToken = await refreshAccessToken(token);
+        if (isStoredTokenExpired() || isPeriodicRefreshDue()) {
+            const refreshedToken = await refreshAccessTokenOrClear(token);
             if (!refreshedToken) {
-                clearStoredAccessToken();
                 return null;
             }
 
@@ -175,9 +218,8 @@ export async function fetchCurrentUser() {
             return user;
         }
 
-        const refreshedToken = await refreshAccessToken(activeToken);
+        const refreshedToken = await refreshAccessTokenOrClear(activeToken);
         if (!refreshedToken) {
-            clearStoredAccessToken();
             return null;
         }
 
@@ -190,6 +232,21 @@ export async function fetchCurrentUser() {
     } catch (error) {
         return null;
     }
+}
+
+function startTokenRefreshLoop() {
+    if (tokenRefreshIntervalId) {
+        return;
+    }
+
+    tokenRefreshIntervalId = window.setInterval(async () => {
+        const token = getStoredAccessToken();
+        if (!token || !isPeriodicRefreshDue()) {
+            return;
+        }
+
+        await refreshAccessTokenOrClear(token);
+    }, 60 * 1000);
 }
 
 async function authenticateWithBackend(idToken) {
@@ -222,8 +279,12 @@ export function logout() {
     clearStoredAccessToken();
 }
 
+function hasGoogleIdentityApi() {
+    return Boolean(window.google && window.google.accounts && window.google.accounts.id);
+}
+
 function loadGoogleIdentityScript() {
-    if (window.google && window.google.accounts && window.google.accounts.id) {
+    if (hasGoogleIdentityApi()) {
         return Promise.resolve();
     }
 
@@ -266,7 +327,7 @@ function getGooglePopupProxyContainer() {
 }
 
 function openGoogleAccountChooserViaRenderedButton() {
-    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+    if (!hasGoogleIdentityApi()) {
         return false;
     }
 
@@ -334,11 +395,13 @@ export function initGoogleLogin() {
     const loginButton = document.querySelector('[data-google-login]');
     const logoutButton = document.querySelector('[data-logout-button]');
 
+    startTokenRefreshLoop();
+
     if (!loginButton && !logoutButton) {
         return;
     }
 
-    const handleGoogleCredentialResponse = async (response) => {
+    async function handleGoogleCredentialResponse(response) {
         if (!response || !response.credential) {
             alert('Google login failed. Please try again.');
             return;
@@ -358,14 +421,14 @@ export function initGoogleLogin() {
         }
 
         window.location.href = 'profile.html';
-    };
+    }
 
-    const startGoogleLogin = async () => {
+    async function startGoogleLogin() {
         try {
             await initializeGoogleLogin(handleGoogleCredentialResponse);
 
             // Always open the account chooser when login is clicked.
-            if (window.google && window.google.accounts && window.google.accounts.id) {
+            if (hasGoogleIdentityApi()) {
                 window.google.accounts.id.disableAutoSelect();
             }
 
@@ -376,7 +439,7 @@ export function initGoogleLogin() {
         } catch (error) {
             alert(error.message || 'Unable to start Google login right now.');
         }
-    };
+    }
 
     setAuthButtonsState(loginButton, logoutButton, null);
 
@@ -397,7 +460,7 @@ export function initGoogleLogin() {
         logoutButton.addEventListener('click', () => {
             logout();
 
-            if (window.google && window.google.accounts && window.google.accounts.id) {
+            if (hasGoogleIdentityApi()) {
                 window.google.accounts.id.disableAutoSelect();
             }
 
