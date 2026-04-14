@@ -170,17 +170,53 @@ function renderResolutionDetails(data, currentUser, token) {
     const finderContact = data.finder_contact;
     const allowedActions = data.allowed_actions || [];
     
-    // Update subtitle based on resolution type and status
+    // Determine context-appropriate subtitle based on resolution type, status, and viewer role
     const subtitle = document.getElementById('resolutionSubtitle');
-    if (resolution.type === 'owner_initiated') {
-        subtitle.textContent = 'Someone has claimed your item. Please review and approve or reject.';
-    } else if (resolution.type === 'finder_initiated') {
-        if (resolution.status === 'return_initiated') {
-            subtitle.textContent = 'A finder believes they have your lost item. Please confirm the return or mark as mismatched.';
-        } else if (resolution.status === 'approved') {
-            subtitle.textContent = 'Your return has been approved. Complete the exchange or mark as mismatched.';
-        } else {
-            subtitle.textContent = 'Return status: ' + getStatusLabel(resolution.status);
+    const isOwnerInitiated = resolution.type === 'owner_initiated';
+    const isFinderInitiated = resolution.type === 'finder_initiated';
+    const viewerRole = viewer.role;
+    
+    if (isOwnerInitiated) {
+        // Found item: viewer is either "finder" (who reported) or "owner" (who claims)
+        if (viewerRole === 'finder') {
+            subtitle.textContent = 'Someone has claimed your found item. Please review and approve or reject their claim.';
+        } else if (viewerRole === 'owner') {
+            if (resolution.status === 'pending') {
+                subtitle.textContent = 'Your claim is pending. Waiting for the finder to review and approve.';
+            } else if (resolution.status === 'approved') {
+                subtitle.textContent = 'Your claim has been approved! Please coordinate with the finder to collect your item.';
+            } else if (resolution.status === 'rejected') {
+                subtitle.textContent = 'Unfortunately, your claim was rejected by the finder.';
+            } else {
+                subtitle.textContent = getStatusLabel(resolution.status);
+            }
+        }
+    } else if (isFinderInitiated) {
+        // Lost item: viewer is either "owner" (who reported lost) or "finder" (who found)
+        if (viewerRole === 'owner') {
+            if (resolution.status === 'return_initiated') {
+                subtitle.textContent = 'A finder has reported finding your lost item. Please verify it\'s the correct item and approve the return.';
+            } else if (resolution.status === 'approved') {
+                subtitle.textContent = 'You\'ve approved the return. Please confirm the collection and mark as completed, or mark as item mismatch if it\'s not the correct item.';
+            } else if (resolution.status === 'completed') {
+                subtitle.textContent = 'Great! Your item has been successfully returned.';
+            } else if (resolution.status === 'invalidated') {
+                subtitle.textContent = 'You\'ve marked this as an item mismatch. No action needed.';
+            } else {
+                subtitle.textContent = getStatusLabel(resolution.status);
+            }
+        } else if (viewerRole === 'finder') {
+            if (resolution.status === 'return_initiated') {
+                subtitle.textContent = 'You\'ve reported finding this item. Waiting for the owner to review and confirm.';
+            } else if (resolution.status === 'approved') {
+                subtitle.textContent = 'The owner has approved your report. Coordinate to hand over the item.';
+            } else if (resolution.status === 'completed') {
+                subtitle.textContent = 'The item return has been completed. Thank you for your help!';
+            } else if (resolution.status === 'invalidated') {
+                subtitle.textContent = 'The owner marked this as an item mismatch.';
+            } else {
+                subtitle.textContent = getStatusLabel(resolution.status);
+            }
         }
     }
     
@@ -191,6 +227,28 @@ function renderResolutionDetails(data, currentUser, token) {
         statusElement.className = `status-badge status-${resolution.status || 'unknown'}`;
     }
     
+    // Determine contact details section header based on context
+    let contactHeaderText = 'Contact Details';
+    if (isOwnerInitiated) {
+        if (viewerRole === 'finder') {
+            contactHeaderText = 'Claimer\'s Contact Details';
+        } else if (viewerRole === 'owner') {
+            contactHeaderText = 'Finder\'s Contact Details';
+        }
+    } else if (isFinderInitiated) {
+        if (viewerRole === 'owner') {
+            contactHeaderText = 'Finder\'s Contact Details';
+        } else if (viewerRole === 'finder') {
+            contactHeaderText = 'Owner\'s Contact Details';
+        }
+    }
+    
+    // Update the section header
+    const contactHeader = document.querySelector('.card h3');
+    if (contactHeader) {
+        contactHeader.textContent = contactHeaderText;
+    }
+    
     // Finder/Claimer details
     const finderDetails = document.getElementById('finderDetails');
     if (finderContact && finderContact.name) {
@@ -199,10 +257,14 @@ function renderResolutionDetails(data, currentUser, token) {
             ${finderContact.email ? `<p class="small">Email: ${finderContact.email}</p>` : ''}
             ${finderContact.phone ? `<p class="small">Phone: ${finderContact.phone}</p>` : ''}
         `;
-    } else if (resolution.type === 'finder_initiated') {
-        finderDetails.textContent = 'The finder\'s contact details have been provided above. You can reach out to confirm the item details.';
+    } else if (resolution.status === 'rejected') {
+        finderDetails.textContent = 'This claim/return request was rejected. No further action needed.';
+    } else if (resolution.status === 'pending') {
+        finderDetails.textContent = 'Contact details will be displayed after you approve.';
+    } else if (resolution.status === 'invalidated') {
+        finderDetails.textContent = 'This item return was marked as a mismatch. The item was not the correct match.';
     } else {
-        finderDetails.textContent = 'Contact details will be displayed after you approve the claim.';
+        finderDetails.textContent = 'Contact information not available.';
     }
     
     // Item details
@@ -235,31 +297,47 @@ function renderResolutionDetails(data, currentUser, token) {
     // Show buttons based on allowed actions
     if (allowedActions.includes('approve')) {
         approveButton.style.display = 'inline-block';
-        approveButton.onclick = () => handleApproveResolution(resolution.id, token);
+        // Button text based on resolution type
+        if (isFinderInitiated) {
+            approveButton.textContent = 'Approve Return';
+        } else {
+            approveButton.textContent = 'Approve Claim';
+        }
+        approveButton.onclick = () => handleApproveResolution(resolution.id, token, isFinderInitiated);
     }
     
     if (allowedActions.includes('reject')) {
         rejectButton.style.display = 'inline-block';
-        rejectButton.textContent = 'Reject / Item Doesn\'t Match';
-        rejectButton.onclick = () => handleRejectResolution(resolution.id, token);
+        // Button text based on resolution type
+        if (isFinderInitiated) {
+            rejectButton.textContent = 'Reject / Item Doesn\'t Match';
+        } else {
+            rejectButton.textContent = 'Reject Claim';
+        }
+        rejectButton.onclick = () => handleRejectResolution(resolution.id, token, isFinderInitiated);
     }
     
     if (allowedActions.includes('complete')) {
         completeButton.style.display = 'inline-block';
         completeButton.textContent = 'Mark as Completed';
-        completeButton.onclick = () => handleCompleteResolution(resolution.id, token);
+        completeButton.onclick = () => handleCompleteResolution(resolution.id, token, isFinderInitiated);
     }
     
     if (allowedActions.includes('invalidate')) {
         invalidateButton.style.display = 'inline-block';
-        invalidateButton.textContent = 'Item Mismatch';
-        invalidateButton.onclick = () => handleInvalidateResolution(resolution.id, token);
+        // Button text based on resolution type
+        if (isFinderInitiated) {
+            invalidateButton.textContent = 'Item Mismatch';
+        } else {
+            invalidateButton.textContent = 'Item Doesn\'t Match';
+        }
+        invalidateButton.onclick = () => handleInvalidateResolution(resolution.id, token, isFinderInitiated);
     }
     
     contentDiv.hidden = false;
 }
 
-async function handleApproveResolution(resolutionId, token) {
+async function handleApproveResolution(resolutionId, token, isFinderInitiated) {
     try {
         const button = document.getElementById('approveButton');
         const originalText = button.textContent;
@@ -267,7 +345,12 @@ async function handleApproveResolution(resolutionId, token) {
         button.textContent = 'Approving...';
         
         await approveResolution(resolutionId, token);
-        alert('Claim approved successfully! A notification has been sent to the claimer.');
+        
+        const message = isFinderInitiated 
+            ? 'Return approved successfully! A notification has been sent to the finder.' 
+            : 'Claim approved successfully! A notification has been sent to the claimer.';
+        alert(message);
+        
         setTimeout(() => {
             location.reload();
         }, 500);
@@ -277,7 +360,7 @@ async function handleApproveResolution(resolutionId, token) {
     }
 }
 
-async function handleRejectResolution(resolutionId, token) {
+async function handleRejectResolution(resolutionId, token, isFinderInitiated) {
     try {
         const button = document.getElementById('rejectButton');
         const originalText = button.textContent;
@@ -285,7 +368,12 @@ async function handleRejectResolution(resolutionId, token) {
         button.textContent = 'Rejecting...';
         
         await rejectResolution(resolutionId, token);
-        alert('Claim rejected successfully! A notification has been sent to the claimer.');
+        
+        const message = isFinderInitiated 
+            ? 'Return rejected successfully! A notification has been sent to the finder.' 
+            : 'Claim rejected successfully! A notification has been sent to the claimer.';
+        alert(message);
+        
         setTimeout(() => {
             location.reload();
         }, 500);
@@ -295,7 +383,7 @@ async function handleRejectResolution(resolutionId, token) {
     }
 }
 
-async function handleCompleteResolution(resolutionId, token) {
+async function handleCompleteResolution(resolutionId, token, isFinderInitiated) {
     try {
         const button = document.getElementById('completeButton');
         const originalText = button.textContent;
@@ -303,7 +391,12 @@ async function handleCompleteResolution(resolutionId, token) {
         button.textContent = 'Completing...';
         
         await completeResolution(resolutionId, token);
-        alert('Item marked as completed successfully! Thank you for using Retrievo.');
+        
+        const message = isFinderInitiated 
+            ? 'Item retrieval completed successfully! Thank you for using Retrievo.' 
+            : 'Item transfer completed successfully! Thank you for using Retrievo.';
+        alert(message);
+        
         setTimeout(() => {
             location.reload();
         }, 500);
@@ -313,7 +406,7 @@ async function handleCompleteResolution(resolutionId, token) {
     }
 }
 
-async function handleInvalidateResolution(resolutionId, token) {
+async function handleInvalidateResolution(resolutionId, token, isFinderInitiated) {
     try {
         const button = document.getElementById('invalidateButton');
         const originalText = button.textContent;
@@ -321,12 +414,17 @@ async function handleInvalidateResolution(resolutionId, token) {
         button.textContent = 'Marking...';
         
         await invalidateResolution(resolutionId, token);
-        alert('Item marked as mismatched successfully! A notification has been sent to the finder.');
+        
+        const message = isFinderInitiated 
+            ? 'Item marked as incorrect/mismatch. The finder has been notified that this was not the correct item.' 
+            : 'Item marked as mismatched. The claimer has been notified.';
+        alert(message);
+        
         setTimeout(() => {
             location.reload();
         }, 500);
     } catch (error) {
-        alert('Failed to invalidate resolution: ' + error.message);
+        alert('Failed to mark item as mismatched: ' + error.message);
         location.reload();
     }
 }

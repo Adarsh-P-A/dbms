@@ -1,4 +1,4 @@
-import { ACCESS_TOKEN_STORAGE_KEY } from './config.js';
+import { ACCESS_TOKEN_STORAGE_KEY, API_BASE_URL } from './config.js';
 
 function decodeJwtPayload(token) {
     if (!token || typeof token !== 'string') {
@@ -60,6 +60,52 @@ function syncAdminNavLink() {
     adminLink.classList.toggle('active', shouldShow && isCurrentAdminPage());
 }
 
+async function updateUnreadIndicator() {
+    try {
+        const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+        if (!token) {
+            return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/notifications/count`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        const unreadCount = data.count || 0;
+
+        // Find notifications link
+        const notificationsLink = document.querySelector('a[href="notifications.html"]');
+        if (!notificationsLink) {
+            return;
+        }
+
+        // Remove existing indicator if present
+        const existingIndicator = notificationsLink.querySelector('.unread-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+
+        // Add indicator if there are unread notifications
+        if (unreadCount > 0) {
+            const indicator = document.createElement('span');
+            indicator.className = 'unread-indicator';
+            indicator.textContent = '●';
+            indicator.title = `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`;
+            notificationsLink.appendChild(indicator);
+        }
+    } catch (error) {
+        console.error('Error updating unread indicator:', error);
+    }
+}
+
 export function initSidebar() {
     const body = document.body;
     const sidebar = document.querySelector('.sidebar');
@@ -72,9 +118,11 @@ export function initSidebar() {
     }
 
     syncAdminNavLink();
+    updateUnreadIndicator();
 
     window.addEventListener('retrievo-auth-changed', syncAdminNavLink);
     window.addEventListener('storage', syncAdminNavLink);
+    window.addEventListener('unread-notifications-updated', updateUnreadIndicator);
 
     body.classList.add('sidebar-open');
 
