@@ -35,6 +35,31 @@
 
             <section class="content">
                 <h1>Recent Items</h1>
+                
+                <!-- Search and Filter Bar -->
+                <div class="search-filter-container">
+                    <div class="search-box">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-input" 
+                            placeholder="Search items by title, location, date..."
+                            autocomplete="off"
+                        >
+                    </div>
+                    <select id="categoryFilter" class="category-filter">
+                        <option value="">All Categories</option>
+                        <option value="accessories">Accessories</option>
+                        <option value="books">Books</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="clothing">Clothing</option>
+                        <option value="documents">Documents</option>
+                        <option value="keys">Keys</option>
+                        <option value="sports">Sports</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
                 <p id="itemsState" class="items-state">Loading recent items...</p>
                 <div class="items-grid" id="itemsGrid">
                     <div class="item-card">

@@ -97,7 +97,6 @@ async function updateUnreadIndicator() {
         if (unreadCount > 0) {
             const indicator = document.createElement('span');
             indicator.className = 'unread-indicator';
-            indicator.textContent = '●';
             indicator.title = `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`;
             notificationsLink.appendChild(indicator);
         }
