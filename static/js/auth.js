@@ -15,11 +15,37 @@ let tokenRefreshIntervalId;
 const ONBOARDING_PAGE = 'onboarding.html';
 const REFRESH_INTERVAL_MS = 25 * 60 * 1000;
 const ONE_SECOND_MS = 1000;
+const HTTP_STATUS_UNAUTHORIZED = 401;
+const HTTP_STATUS_FORBIDDEN = 403;
 
 let refreshPromise = null;
 
+function handleBannedUser() {
+    clearStoredAccessToken();
+    alert('Your account has been banned.');
+    window.location.href = 'index.html';
+}
+
 function emitAuthStateChanged() {
     window.dispatchEvent(new CustomEvent('retrievo-auth-changed'));
+}
+
+function createUserLookupResult(user = null, banned = false) {
+    return {
+        user,
+        banned
+    };
+}
+
+function createAuthResult(user = null, banned = false) {
+    return {
+        banned,
+        user
+    };
+}
+
+function isClientErrorStatus(status) {
+    return typeof status === 'number' && status >= 400 && status < 500;
 }
 
 function getCurrentPageName() {
@@ -142,6 +168,11 @@ async function refreshAccessToken(token) {
             body: JSON.stringify({ token })
         });
 
+        if (response.status === 403) {
+            handleBannedUser();
+            return null;
+        }
+
         if (!response.ok) {
             return null;
         }
@@ -185,53 +216,93 @@ async function fetchProfileWithToken(token) {
         }
     });
 
+    if (response.status === 403) {
+        handleBannedUser();
+        return {
+            user: null,
+            status: 403
+        };
+    }
+
     if (!response.ok) {
-        clearStoredAccessToken();
-        alert("Your account has been banned.");
-        window.location.href = "index.html";
-        return null;
+        return {
+            user: null,
+            status: response.status
+        };
     }
 
     const data = await response.json();
-    return normalizeUser(data);
+    return {
+        user: normalizeUser(data),
+        status: response.status
+    };
 }
 
-export async function fetchCurrentUser() {
+async function fetchCurrentUserDetails() {
     try {
         const token = getStoredAccessToken();
         if (!token) {
-            return null;
+            return createUserLookupResult();
         }
 
         let activeToken = token;
+        let hasRefreshedInThisAttempt = false;
+
         if (isStoredTokenExpired() || isPeriodicRefreshDue()) {
             const refreshedToken = await refreshAccessTokenOrClear(token);
             if (!refreshedToken) {
-                return null;
+                return createUserLookupResult();
             }
 
             activeToken = refreshedToken;
+            hasRefreshedInThisAttempt = true;
         }
 
-        const user = await fetchProfileWithToken(activeToken);
-        if (user) {
-            return user;
+        const profileResult = await fetchProfileWithToken(activeToken);
+        if (profileResult.user) {
+            return createUserLookupResult(profileResult.user);
+        }
+
+        if (profileResult.status === HTTP_STATUS_FORBIDDEN) {
+            return createUserLookupResult(null, true);
+        }
+
+        const shouldRetryWithRefresh = profileResult.status === HTTP_STATUS_UNAUTHORIZED && !hasRefreshedInThisAttempt;
+        if (!shouldRetryWithRefresh) {
+            if (isClientErrorStatus(profileResult.status)) {
+                clearStoredAccessToken();
+            }
+
+            return createUserLookupResult();
         }
 
         const refreshedToken = await refreshAccessTokenOrClear(activeToken);
         if (!refreshedToken) {
-            return null;
+            return createUserLookupResult();
         }
 
-        const refreshedUser = await fetchProfileWithToken(refreshedToken);
-        if (!refreshedUser) {
+        const refreshedProfileResult = await fetchProfileWithToken(refreshedToken);
+        if (refreshedProfileResult.status === HTTP_STATUS_FORBIDDEN) {
+            return createUserLookupResult(null, true);
+        }
+
+        if (refreshedProfileResult.user) {
+            return createUserLookupResult(refreshedProfileResult.user);
+        }
+
+        if (isClientErrorStatus(refreshedProfileResult.status)) {
             clearStoredAccessToken();
         }
 
-        return refreshedUser;
+        return createUserLookupResult();
     } catch (error) {
-        return null;
+        return createUserLookupResult();
     }
+}
+
+export async function fetchCurrentUser() {
+    const result = await fetchCurrentUserDetails();
+    return result.user;
 }
 
 function startTokenRefreshLoop() {
@@ -259,19 +330,38 @@ async function authenticateWithBackend(idToken) {
             body: JSON.stringify({ id_token: idToken })
         });
 
+        if (response.status === HTTP_STATUS_FORBIDDEN) {
+            handleBannedUser();
+            return createAuthResult(null, true);
+        }
+
         if (!response.ok) {
-            return null;
+            return createAuthResult();
         }
 
         const data = await response.json();
         if (!data || !data.access_token) {
-            return null;
+            return createAuthResult();
         }
 
         setStoredAccessToken(data.access_token, data.expires_at);
-        return await fetchCurrentUser();
+        const profileResult = await fetchProfileWithToken(data.access_token);
+
+        if (profileResult.status === HTTP_STATUS_FORBIDDEN) {
+            return createAuthResult(null, true);
+        }
+
+        if (profileResult.user) {
+            return createAuthResult(profileResult.user);
+        }
+
+        if (isClientErrorStatus(profileResult.status)) {
+            clearStoredAccessToken();
+        }
+
+        return createAuthResult();
     } catch (error) {
-        return null;
+        return createAuthResult();
     }
 }
 
@@ -407,7 +497,12 @@ export function initGoogleLogin() {
             return;
         }
 
-        const user = await authenticateWithBackend(response.credential);
+        const authResult = await authenticateWithBackend(response.credential);
+        if (authResult.banned) {
+            return;
+        }
+
+        const user = authResult.user;
         if (!user) {
             alert('Could not authenticate with backend. Please try again.');
             return;

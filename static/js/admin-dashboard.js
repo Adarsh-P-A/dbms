@@ -229,7 +229,7 @@ function renderUsers(users, onAction) {
 
         row.appendChild(
             createActionButton('Temp Ban', 'ban', async () => {
-                const reason = window.prompt('Reason for temporary ban (optional):', 'Temporary Ban') || undefined;
+                const reason = 'Temporary Ban';
                 const daysInput = window.prompt('Ban duration in days:', '7');
                 const parsedDays = Number.parseInt(daysInput || '7', 10);
                 const banDays = Number.isFinite(parsedDays) && parsedDays > 0 ? parsedDays : 7;
