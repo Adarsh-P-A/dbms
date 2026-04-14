@@ -6,7 +6,7 @@ import { initNotifications } from './notifications.js';
 import { initOnboarding } from './onboarding.js';
 import { initItemsFeed } from './items.js';
 import { initItemDetail } from './item-detail.js';
-// import { initResolutionDetail } from './resolution-detail.js';
+import { initResolutionDetail } from './resolution-detail.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initItemsFeed();
     initItemDetail();
 
+    // Conditionally load resolution detail if on resolution page
+    const resolutionStateElement = document.getElementById('resolutionDetailState');
+    if (resolutionStateElement) {
+        initResolutionDetail();
+    }
+
     // Conditionally load admin dashboard if on admin page and user is admin
     const adminStateElement = document.getElementById('adminState');
     if (adminStateElement) {
@@ -25,6 +31,4 @@ document.addEventListener('DOMContentLoaded', () => {
             initAdminDashboard();
         });
     }
-
-    // initResolutionDetail();
 });
