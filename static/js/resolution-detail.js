@@ -60,6 +60,38 @@ function getStatusLabel(status) {
         .replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
+function hasContactDetails(contact) {
+    if (!contact || typeof contact !== 'object') {
+        return false;
+    }
+
+    return Boolean(contact.name || contact.email || contact.phone);
+}
+
+function getContactHeaderText(isOwnerInitiated, isFinderInitiated, viewerRole) {
+    if (isOwnerInitiated) {
+        if (viewerRole === 'finder') {
+            return 'Claimer\'s Contact Details';
+        }
+
+        if (viewerRole === 'owner') {
+            return 'Finder\'s Contact Details';
+        }
+    }
+
+    if (isFinderInitiated) {
+        if (viewerRole === 'owner') {
+            return 'Finder\'s Contact Details';
+        }
+
+        if (viewerRole === 'finder') {
+            return 'Owner\'s Contact Details';
+        }
+    }
+
+    return 'Contact Details';
+}
+
 function setResolutionState(message, isError = false) {
     const stateElement = document.getElementById('resolutionDetailState');
     if (!stateElement) {
@@ -167,7 +199,7 @@ function renderResolutionDetails(data, currentUser, token) {
     const resolution = data.resolution;
     const item = data.item;
     const viewer = data.viewer;
-    const finderContact = data.finder_contact;
+    const finderContact = data?.finder_contact ?? null;
     const allowedActions = data.allowed_actions || [];
     
     // Determine context-appropriate subtitle based on resolution type, status, and viewer role
@@ -227,44 +259,46 @@ function renderResolutionDetails(data, currentUser, token) {
         statusElement.className = `status-badge status-${resolution.status || 'unknown'}`;
     }
     
-    // Determine contact details section header based on context
-    let contactHeaderText = 'Contact Details';
-    if (isOwnerInitiated) {
-        if (viewerRole === 'finder') {
-            contactHeaderText = 'Claimer\'s Contact Details';
-        } else if (viewerRole === 'owner') {
-            contactHeaderText = 'Finder\'s Contact Details';
-        }
-    } else if (isFinderInitiated) {
-        if (viewerRole === 'owner') {
-            contactHeaderText = 'Finder\'s Contact Details';
-        } else if (viewerRole === 'finder') {
-            contactHeaderText = 'Owner\'s Contact Details';
-        }
-    }
-    
-    // Update the section header
-    const contactHeader = document.querySelector('.card h3');
-    if (contactHeader) {
-        contactHeader.textContent = contactHeaderText;
-    }
-    
-    // Finder/Claimer details
+    const contactCard = document.querySelector('#finderDetails')?.closest('.card');
     const finderDetails = document.getElementById('finderDetails');
-    if (finderContact && finderContact.name) {
-        finderDetails.innerHTML = `
-            <p><strong>${finderContact.name}</strong></p>
-            ${finderContact.email ? `<p class="small">Email: ${finderContact.email}</p>` : ''}
-            ${finderContact.phone ? `<p class="small">Phone: ${finderContact.phone}</p>` : ''}
-        `;
-    } else if (resolution.status === 'rejected') {
-        finderDetails.textContent = 'This claim/return request was rejected. No further action needed.';
-    } else if (resolution.status === 'pending') {
-        finderDetails.textContent = 'Contact details will be displayed after you approve.';
-    } else if (resolution.status === 'invalidated') {
-        finderDetails.textContent = 'This item return was marked as a mismatch. The item was not the correct match.';
+    finderDetails.innerHTML = '';
+
+    if (hasContactDetails(finderContact)) {
+        if (contactCard) {
+            contactCard.hidden = false;
+        }
+
+        const contactHeaderText = getContactHeaderText(isOwnerInitiated, isFinderInitiated, viewerRole);
+        const contactHeader = contactCard?.querySelector('h3');
+        if (contactHeader) {
+            contactHeader.textContent = contactHeaderText;
+        }
+
+        if (finderContact.name) {
+            const nameElement = document.createElement('p');
+            const strongElement = document.createElement('strong');
+            strongElement.textContent = finderContact.name;
+            nameElement.appendChild(strongElement);
+            finderDetails.appendChild(nameElement);
+        }
+
+        if (finderContact.email) {
+            const emailElement = document.createElement('p');
+            emailElement.className = 'small';
+            emailElement.textContent = `Email: ${finderContact.email}`;
+            finderDetails.appendChild(emailElement);
+        }
+
+        if (finderContact.phone) {
+            const phoneElement = document.createElement('p');
+            phoneElement.className = 'small';
+            phoneElement.textContent = `Phone: ${finderContact.phone}`;
+            finderDetails.appendChild(phoneElement);
+        }
     } else {
-        finderDetails.textContent = 'Contact information not available.';
+        if (contactCard) {
+            contactCard.hidden = true;
+        }
     }
     
     // Item details
@@ -274,6 +308,7 @@ function renderResolutionDetails(data, currentUser, token) {
         itemImage.alt = item.title || 'Item image';
         
         document.getElementById('itemTitleDetail').textContent = item.title || 'Untitled Item';
+        document.getElementById('itemCategory').textContent = item.category || 'No category specified';
         document.getElementById('itemLocationDetail').textContent = formatLocation(item.location);
         document.getElementById('itemDateDetail').textContent = formatDate(item.date);
     }

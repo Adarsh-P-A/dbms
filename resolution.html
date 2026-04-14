@@ -49,19 +49,14 @@
                     <p class="subtitle" id="resolutionSubtitle"></p>
 
                     <div class="card">
-                        <h3>Action Required</h3>
-                        <p>Please verify and respond to this resolution request.</p>
-                    </div>
-
-                    <div class="card">
                         <h3>Finder's / Claimer's Contact Details</h3>
                         <div id="finderDetails"></div>
                     </div>
 
                     <div class="btn-group">
                         <button id="completeButton" class="complete" style="display: none;">Mark as Completed</button>
-                        <button id="rejectButton" class="reject" style="display: none;">Reject / Item Doesn't Match</button>
                         <button id="approveButton" class="approve" style="display: none;">Approve</button>
+                        <button id="rejectButton" class="reject" style="display: none;">Reject / Item Doesn't Match</button>
                         <button id="invalidateButton" class="invalidate" style="display: none;">Invalidate</button>
                     </div>
 
@@ -80,6 +75,7 @@
 
                             <div>
                                 <p><strong id="itemTitleDetail"></strong></p>
+                                <p class="small">Category: <span id="itemCategory"></span></p>
                                 <p class="small">Location: <span id="itemLocationDetail"></span></p>
                                 <p class="small">Date: <span id="itemDateDetail"></span></p>
                             </div>

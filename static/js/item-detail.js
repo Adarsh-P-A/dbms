@@ -449,10 +449,6 @@ async function handleMessageSubmit() {
         await createResolution(item.id, message, token);
         
         hideMessageModal();
-        alert('Request submitted successfully! Redirecting to notifications...');
-        
-        // Redirect to notifications page (since API only returns {"ok": true})
-        window.location.href = 'notifications.html';
     } catch (error) {
         console.error('Error creating resolution:', error);
         
