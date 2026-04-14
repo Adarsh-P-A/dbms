@@ -63,7 +63,7 @@ function setStateText(stateElement, message) {
     stateElement.hidden = false;
 }
 
-function renderNotifications(listElement, notifications) {
+function renderNotifications(listElement, notifications, token) {
     listElement.innerHTML = '';
 
     for (const notification of notifications) {
@@ -90,8 +90,21 @@ function renderNotifications(listElement, notifications) {
         // Add click handler to navigate to resolution page if resolution_id exists
         if (notification.resolution_id) {
             item.style.cursor = 'pointer';
-            item.addEventListener('click', () => {
+            item.addEventListener('click', async () => {
+                // Mark as read before navigating
+                if (!notification.is_read) {
+                    await markNotificationAsRead(notification.id, token);
+                }
                 window.location.href = `resolution.html?id=${notification.resolution_id}`;
+            });
+        } else {
+            // For non-resolution notifications, still mark as read on click
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', async () => {
+                if (!notification.is_read) {
+                    await markNotificationAsRead(notification.id, token);
+                    item.classList.remove('unread');
+                }
             });
         }
         
@@ -117,6 +130,42 @@ async function fetchNotifications(token) {
     }
 
     return data.notifications;
+}
+
+async function markNotificationAsRead(notificationId, token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/mark-read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            // Dispatch event to update sidebar indicator
+            window.dispatchEvent(new CustomEvent('unread-notifications-updated'));
+        }
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+async function markAllNotificationsAsRead(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/notifications/mark-all-read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            // Dispatch event to update sidebar indicator
+            window.dispatchEvent(new CustomEvent('unread-notifications-updated'));
+        }
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+    }
 }
 
 export async function initNotifications() {
@@ -153,7 +202,7 @@ export async function initNotifications() {
         }
 
         stateElement.hidden = true;
-        renderNotifications(listElement, notifications);
+        renderNotifications(listElement, notifications, token);
     } catch (error) {
         listElement.innerHTML = '';
         setStateText(stateElement, 'Unable to load notifications right now. Please try again.');

@@ -1,4 +1,5 @@
 import {
+    ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY,
     ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY,
     ACCESS_TOKEN_STORAGE_KEY,
     API_BASE_URL,
@@ -10,7 +11,42 @@ import {
 
 let googleInitPromise;
 let googlePopupProxyContainer;
+let tokenRefreshIntervalId;
 const ONBOARDING_PAGE = 'onboarding.html';
+const REFRESH_INTERVAL_MS = 25 * 60 * 1000;
+const ONE_SECOND_MS = 1000;
+const HTTP_STATUS_UNAUTHORIZED = 401;
+const HTTP_STATUS_FORBIDDEN = 403;
+
+let refreshPromise = null;
+
+function handleBannedUser() {
+    clearStoredAccessToken();
+    alert('Your account has been banned.');
+    window.location.href = 'index.html';
+}
+
+function emitAuthStateChanged() {
+    window.dispatchEvent(new CustomEvent('retrievo-auth-changed'));
+}
+
+function createUserLookupResult(user = null, banned = false) {
+    return {
+        user,
+        banned
+    };
+}
+
+function createAuthResult(user = null, banned = false) {
+    return {
+        banned,
+        user
+    };
+}
+
+function isClientErrorStatus(status) {
+    return typeof status === 'number' && status >= 400 && status < 500;
+}
 
 function getCurrentPageName() {
     const pathname = window.location.pathname || '';
@@ -76,31 +112,50 @@ function getStoredAccessToken() {
     return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
 }
 
+function getStoredNumber(key) {
+    const rawValue = localStorage.getItem(key);
+    if (!rawValue) {
+        return null;
+    }
+
+    const parsedValue = Number(rawValue);
+    return Number.isFinite(parsedValue) ? parsedValue : null;
+}
+
 function setStoredAccessToken(token, expiresAt) {
     localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+    localStorage.setItem(ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY, String(Math.floor(Date.now() / 1000)));
 
     if (typeof expiresAt === 'number') {
         localStorage.setItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY, String(expiresAt));
     }
+
+    emitAuthStateChanged();
 }
 
 function clearStoredAccessToken() {
     localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     localStorage.removeItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY);
+    emitAuthStateChanged();
+}
+
+function isPeriodicRefreshDue() {
+    const refreshedAt = getStoredNumber(ACCESS_TOKEN_REFRESHED_AT_STORAGE_KEY);
+    if (refreshedAt === null) {
+        return true;
+    }
+
+    return Date.now() >= (refreshedAt * ONE_SECOND_MS) + REFRESH_INTERVAL_MS;
 }
 
 function isStoredTokenExpired() {
-    const expiresAtRaw = localStorage.getItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
-    if (!expiresAtRaw) {
+    const expiresAt = getStoredNumber(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+    if (expiresAt === null) {
         return false;
     }
 
-    const expiresAt = Number(expiresAtRaw);
-    if (!Number.isFinite(expiresAt)) {
-        return false;
-    }
-
-    return Date.now() >= expiresAt * 1000;
+    return Date.now() >= expiresAt * ONE_SECOND_MS;
 }
 
 async function refreshAccessToken(token) {
@@ -112,6 +167,11 @@ async function refreshAccessToken(token) {
             },
             body: JSON.stringify({ token })
         });
+
+        if (response.status === 403) {
+            handleBannedUser();
+            return null;
+        }
 
         if (!response.ok) {
             return null;
@@ -129,6 +189,25 @@ async function refreshAccessToken(token) {
     }
 }
 
+async function refreshAccessTokenOrClear(token) {
+    if (refreshPromise) {
+        return refreshPromise;
+    }
+
+    refreshPromise = refreshAccessToken(token)
+        .finally(() => {
+            refreshPromise = null;
+        });
+
+    const refreshedToken = await refreshPromise;
+
+    if (!refreshedToken) {
+        clearStoredAccessToken();
+    }
+
+    return refreshedToken;
+}
+
 async function fetchProfileWithToken(token) {
     const response = await fetch(`${API_BASE_URL}${PROFILE_ME_ENDPOINT}`, {
         method: 'GET',
@@ -137,52 +216,108 @@ async function fetchProfileWithToken(token) {
         }
     });
 
+    if (response.status === 403) {
+        handleBannedUser();
+        return {
+            user: null,
+            status: 403
+        };
+    }
+
     if (!response.ok) {
-        return null;
+        return {
+            user: null,
+            status: response.status
+        };
     }
 
     const data = await response.json();
-    return normalizeUser(data);
+    return {
+        user: normalizeUser(data),
+        status: response.status
+    };
 }
 
-export async function fetchCurrentUser() {
+async function fetchCurrentUserDetails() {
     try {
         const token = getStoredAccessToken();
         if (!token) {
-            return null;
+            return createUserLookupResult();
         }
 
         let activeToken = token;
-        if (isStoredTokenExpired()) {
-            const refreshedToken = await refreshAccessToken(token);
+        let hasRefreshedInThisAttempt = false;
+
+        if (isStoredTokenExpired() || isPeriodicRefreshDue()) {
+            const refreshedToken = await refreshAccessTokenOrClear(token);
             if (!refreshedToken) {
-                clearStoredAccessToken();
-                return null;
+                return createUserLookupResult();
             }
 
             activeToken = refreshedToken;
+            hasRefreshedInThisAttempt = true;
         }
 
-        const user = await fetchProfileWithToken(activeToken);
-        if (user) {
-            return user;
+        const profileResult = await fetchProfileWithToken(activeToken);
+        if (profileResult.user) {
+            return createUserLookupResult(profileResult.user);
         }
 
-        const refreshedToken = await refreshAccessToken(activeToken);
+        if (profileResult.status === HTTP_STATUS_FORBIDDEN) {
+            return createUserLookupResult(null, true);
+        }
+
+        const shouldRetryWithRefresh = profileResult.status === HTTP_STATUS_UNAUTHORIZED && !hasRefreshedInThisAttempt;
+        if (!shouldRetryWithRefresh) {
+            if (isClientErrorStatus(profileResult.status)) {
+                clearStoredAccessToken();
+            }
+
+            return createUserLookupResult();
+        }
+
+        const refreshedToken = await refreshAccessTokenOrClear(activeToken);
         if (!refreshedToken) {
-            clearStoredAccessToken();
-            return null;
+            return createUserLookupResult();
         }
 
-        const refreshedUser = await fetchProfileWithToken(refreshedToken);
-        if (!refreshedUser) {
+        const refreshedProfileResult = await fetchProfileWithToken(refreshedToken);
+        if (refreshedProfileResult.status === HTTP_STATUS_FORBIDDEN) {
+            return createUserLookupResult(null, true);
+        }
+
+        if (refreshedProfileResult.user) {
+            return createUserLookupResult(refreshedProfileResult.user);
+        }
+
+        if (isClientErrorStatus(refreshedProfileResult.status)) {
             clearStoredAccessToken();
         }
 
-        return refreshedUser;
+        return createUserLookupResult();
     } catch (error) {
-        return null;
+        return createUserLookupResult();
     }
+}
+
+export async function fetchCurrentUser() {
+    const result = await fetchCurrentUserDetails();
+    return result.user;
+}
+
+function startTokenRefreshLoop() {
+    if (tokenRefreshIntervalId) {
+        return;
+    }
+
+    tokenRefreshIntervalId = window.setInterval(async () => {
+        const token = getStoredAccessToken();
+        if (!token || !isPeriodicRefreshDue()) {
+            return;
+        }
+
+        await refreshAccessTokenOrClear(token);
+    }, 60 * 1000);
 }
 
 async function authenticateWithBackend(idToken) {
@@ -195,19 +330,38 @@ async function authenticateWithBackend(idToken) {
             body: JSON.stringify({ id_token: idToken })
         });
 
+        if (response.status === HTTP_STATUS_FORBIDDEN) {
+            handleBannedUser();
+            return createAuthResult(null, true);
+        }
+
         if (!response.ok) {
-            return null;
+            return createAuthResult();
         }
 
         const data = await response.json();
         if (!data || !data.access_token) {
-            return null;
+            return createAuthResult();
         }
 
         setStoredAccessToken(data.access_token, data.expires_at);
-        return await fetchCurrentUser();
+        const profileResult = await fetchProfileWithToken(data.access_token);
+
+        if (profileResult.status === HTTP_STATUS_FORBIDDEN) {
+            return createAuthResult(null, true);
+        }
+
+        if (profileResult.user) {
+            return createAuthResult(profileResult.user);
+        }
+
+        if (isClientErrorStatus(profileResult.status)) {
+            clearStoredAccessToken();
+        }
+
+        return createAuthResult();
     } catch (error) {
-        return null;
+        return createAuthResult();
     }
 }
 
@@ -215,8 +369,12 @@ export function logout() {
     clearStoredAccessToken();
 }
 
+function hasGoogleIdentityApi() {
+    return Boolean(window.google && window.google.accounts && window.google.accounts.id);
+}
+
 function loadGoogleIdentityScript() {
-    if (window.google && window.google.accounts && window.google.accounts.id) {
+    if (hasGoogleIdentityApi()) {
         return Promise.resolve();
     }
 
@@ -259,7 +417,7 @@ function getGooglePopupProxyContainer() {
 }
 
 function openGoogleAccountChooserViaRenderedButton() {
-    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+    if (!hasGoogleIdentityApi()) {
         return false;
     }
 
@@ -327,17 +485,24 @@ export function initGoogleLogin() {
     const loginButton = document.querySelector('[data-google-login]');
     const logoutButton = document.querySelector('[data-logout-button]');
 
+    startTokenRefreshLoop();
+
     if (!loginButton && !logoutButton) {
         return;
     }
 
-    const handleGoogleCredentialResponse = async (response) => {
+    async function handleGoogleCredentialResponse(response) {
         if (!response || !response.credential) {
             alert('Google login failed. Please try again.');
             return;
         }
 
-        const user = await authenticateWithBackend(response.credential);
+        const authResult = await authenticateWithBackend(response.credential);
+        if (authResult.banned) {
+            return;
+        }
+
+        const user = authResult.user;
         if (!user) {
             alert('Could not authenticate with backend. Please try again.');
             return;
@@ -351,14 +516,14 @@ export function initGoogleLogin() {
         }
 
         window.location.href = 'profile.html';
-    };
+    }
 
-    const startGoogleLogin = async () => {
+    async function startGoogleLogin() {
         try {
             await initializeGoogleLogin(handleGoogleCredentialResponse);
 
             // Always open the account chooser when login is clicked.
-            if (window.google && window.google.accounts && window.google.accounts.id) {
+            if (hasGoogleIdentityApi()) {
                 window.google.accounts.id.disableAutoSelect();
             }
 
@@ -369,7 +534,7 @@ export function initGoogleLogin() {
         } catch (error) {
             alert(error.message || 'Unable to start Google login right now.');
         }
-    };
+    }
 
     setAuthButtonsState(loginButton, logoutButton, null);
 
@@ -390,7 +555,7 @@ export function initGoogleLogin() {
         logoutButton.addEventListener('click', () => {
             logout();
 
-            if (window.google && window.google.accounts && window.google.accounts.id) {
+            if (hasGoogleIdentityApi()) {
                 window.google.accounts.id.disableAutoSelect();
             }
 

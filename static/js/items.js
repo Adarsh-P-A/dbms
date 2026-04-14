@@ -1,6 +1,9 @@
 import { fetchCurrentUser } from './auth.js';
 import { API_BASE_URL, ITEMS_ALL_ENDPOINT } from './config.js';
 
+// Store all items in memory for searching and filtering
+let allItems = [];
+
 function getSegmentForUser(user) {
     if (!user || !user.hostel) {
         return 'public';
@@ -163,9 +166,46 @@ function renderItems(items) {
 
     grid.innerHTML = '';
 
+    if (items.length === 0) {
+        grid.innerHTML = '<p class="no-results">No items match your search or filter.</p>';
+        return;
+    }
+
     for (const item of items) {
         grid.appendChild(createItemCard(item));
     }
+}
+
+function filterAndSearchItems() {
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    
+    const searchQuery = (searchInput?.value || '').toLowerCase().trim();
+    const selectedCategory = (categoryFilter?.value || '').toLowerCase().trim();
+
+    let filtered = allItems;
+
+    // Filter by category
+    if (selectedCategory) {
+        filtered = filtered.filter(item => 
+            item.category && item.category.toLowerCase() === selectedCategory
+        );
+    }
+
+    // Filter by search query (search across multiple fields)
+    if (searchQuery) {
+        filtered = filtered.filter(item => {
+            const titleMatch = item.title && item.title.toLowerCase().includes(searchQuery);
+            const locationMatch = item.location && 
+                formatLocation(item.location).toLowerCase().includes(searchQuery);
+            const dateMatch = item.date && formatDate(item.date).toLowerCase().includes(searchQuery);
+            const categoryMatch = item.category && item.category.toLowerCase().includes(searchQuery);
+            
+            return titleMatch || locationMatch || dateMatch || categoryMatch;
+        });
+    }
+
+    renderItems(filtered);
 }
 
 async function fetchItems(segment) {
@@ -205,8 +245,25 @@ export async function initItemsFeed() {
             return;
         }
 
+        // Store items in global variable for searching/filtering
+        allItems = items;
+
         hideItemsState();
-        renderItems(items);
+        
+        // Initial render
+        renderItems(allItems);
+
+        // Add event listeners for search and filter
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', filterAndSearchItems);
+        }
+
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', filterAndSearchItems);
+        }
     } catch (error) {
         grid.innerHTML = '';
         setItemsState('Unable to load items right now. Please try again.', true);

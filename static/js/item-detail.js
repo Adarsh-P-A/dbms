@@ -163,6 +163,25 @@ async function reportItem(itemId, reason, token) {
     return await response.json();
 }
 
+async function deleteItem(itemId, token) {
+    const response = await fetch(`${API_BASE_URL}${ITEMS_ENDPOINT}/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        const errorMessage = await getApiErrorMessage(
+            response,
+            `Failed to delete item (${response.status})`
+        );
+        throw new Error(errorMessage);
+    }
+
+    return await response.json();
+}
+
 function populateReportReasons() {
     const select = document.getElementById('reportReason');
     if (!select) return;
@@ -249,6 +268,7 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
     // Show/hide action buttons based on user and item type
     const claimButton = document.getElementById('claimButton');
     const reportButton = document.getElementById('reportButton');
+    const deleteButton = document.getElementById('deleteButton');
 
     // Check if current user is the item creator (reporter)
     // Only hide claim button if user is logged in AND is the item creator
@@ -281,6 +301,18 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
     } else {
         reportButton.style.display = 'none';
         reportButton.onclick = null;
+    }
+
+    // Only show delete button if user is the item creator and 
+    // there is no active resolution (claim) on the item
+    if (isItemCreator) {
+        deleteButton.style.display = 'inline-block';
+        deleteButton.disabled = false;
+        deleteButton.textContent = 'Delete Item';
+        deleteButton.onclick = () => handleDeleteItem(item, hasActiveResolution, deleteButton);
+    } else {
+        deleteButton.style.display = 'none';
+        deleteButton.onclick = null;
     }
 
     contentDiv.hidden = false;
@@ -335,6 +367,44 @@ async function handleReportItem(item, reportButton) {
         if (reportButton) {
             reportButton.disabled = false;
             reportButton.textContent = originalLabel || 'Report Item';
+        }
+    }
+}
+
+async function handleDeleteItem(item, hasActiveResolution, deleteButton) {
+    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (!token) {
+        alert('Please log in to delete this item.');
+        return;
+    }
+
+    if (hasActiveResolution) {
+        alert('You cannot delete an item that has an active resolution.');
+        return;
+    }
+
+    const shouldDelete = window.confirm('Delete this item permanently? This action cannot be undone.');
+    if (!shouldDelete) {
+        return;
+    }
+
+    const originalLabel = deleteButton ? deleteButton.textContent : '';
+    if (deleteButton) {
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Deleting...';
+    }
+
+    try {
+        await deleteItem(item.id, token);
+        alert('Item deleted successfully.');
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        alert(error.message || 'Failed to delete item. Please try again.');
+
+        if (deleteButton) {
+            deleteButton.disabled = false;
+            deleteButton.textContent = originalLabel || 'Delete Item';
         }
     }
 }

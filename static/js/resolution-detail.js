@@ -1,345 +1,464 @@
-// import { fetchCurrentUser } from './auth.js';
-// import { ACCESS_TOKEN_STORAGE_KEY, API_BASE_URL } from './config.js';
+import { fetchCurrentUser } from './auth.js';
+import { ACCESS_TOKEN_STORAGE_KEY, API_BASE_URL } from './config.js';
 
-// const RESOLUTIONS_ENDPOINT = '/resolutions';
+const RESOLUTIONS_ENDPOINT = '/resolutions';
 
-// function getQueryParam(param) {
-//     const urlParams = new URLSearchParams(window.location.search);
-//     return urlParams.get(param);
-// }
+function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
 
-// function formatDate(rawDate) {
-//     if (!rawDate) {
-//         return 'Date not available';
-//     }
+function formatDate(rawDate) {
+    if (!rawDate) {
+        return 'Date not available';
+    }
 
-//     const date = new Date(rawDate);
-//     if (Number.isNaN(date.getTime())) {
-//         return rawDate;
-//     }
+    const date = new Date(rawDate);
+    if (Number.isNaN(date.getTime())) {
+        return rawDate;
+    }
 
-//     return date.toLocaleDateString('en-IN', {
-//         year: 'numeric',
-//         month: 'short',
-//         day: 'numeric'
-//     });
-// }
+    return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
 
-// function formatLocation(rawLocation) {
-//     if (!rawLocation) {
-//         return 'Unknown location';
-//     }
+function formatLocation(rawLocation) {
+    if (!rawLocation) {
+        return 'Unknown location';
+    }
 
-//     return String(rawLocation)
-//         .replace(/_/g, ' ')
-//         .replace(/\b\w/g, (match) => match.toUpperCase());
-// }
+    return String(rawLocation)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+}
 
-// function normalizeImageUrl(rawUrl) {
-//     if (typeof rawUrl !== 'string') {
-//         return '';
-//     }
+function normalizeImageUrl(rawUrl) {
+    if (typeof rawUrl !== 'string') {
+        return '';
+    }
 
-//     return rawUrl.trim().replace(/["']/g, '');
-// }
+    return rawUrl.trim().replace(/["']/g, '');
+}
 
-// function getStatusLabel(status) {
-//     if (!status) return 'Unknown';
+function getStatusLabel(status) {
+    if (!status) return 'Unknown';
     
-//     return String(status)
-//         .replace(/_/g, ' ')
-//         .replace(/\b\w/g, (match) => match.toUpperCase());
-// }
-
-// function setResolutionState(message, isError = false) {
-//     const stateElement = document.getElementById('resolutionDetailState');
-//     if (!stateElement) {
-//         return;
-//     }
-
-//     stateElement.textContent = message;
-//     stateElement.hidden = false;
-//     stateElement.classList.toggle('resolution-detail-state-error', isError);
-// }
-
-// function hideResolutionState() {
-//     const stateElement = document.getElementById('resolutionDetailState');
-//     if (!stateElement) {
-//         return;
-//     }
-
-//     stateElement.hidden = true;
-// }
-
-// async function fetchResolutionDetails(resolutionId, token) {
-//     const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}`, {
-//         method: 'GET',
-//         headers: {
-//             'Authorization': `Bearer ${token}`
-//         }
-//     });
-
-//     // console.log(response);
-
-//     if (!response.ok) {
-//         throw new Error(`Failed to fetch resolution details (${response.status})`);
-//     }
-
-//     const payload = await response.json();
-//     return payload.resolution || payload;
-// }
-
-// async function approveResolution(resolutionId, token) {
-//     const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/approve`, {
-//         method: 'POST',
-//         headers: {
-//             'Authorization': `Bearer ${token}`
-//         }
-//     });
-
-//     if (!response.ok) {
-//         throw new Error(`Failed to approve resolution (${response.status})`);
-//     }
-
-//     return await response.json();
-// }
-
-// async function rejectResolution(resolutionId, token) {
-//     const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/reject`, {
-//         method: 'POST',
-//         headers: {
-//             'Authorization': `Bearer ${token}`
-//         }
-//     });
-
-//     if (!response.ok) {
-//         throw new Error(`Failed to reject resolution (${response.status})`);
-//     }
-
-//     return await response.json();
-// }
-
-// async function completeResolution(resolutionId, token) {
-//     const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/complete`, {
-//         method: 'POST',
-//         headers: {
-//             'Authorization': `Bearer ${token}`
-//         }
-//     });
-
-//     if (!response.ok) {
-//         throw new Error(`Failed to complete resolution (${response.status})`);
-//     }
-
-//     return await response.json();
-// }
-
-// async function invalidateResolution(resolutionId, token) {
-//     const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/invalidate`, {
-//         method: 'POST',
-//         headers: {
-//             'Authorization': `Bearer ${token}`
-//         }
-//     });
-
-//     if (!response.ok) {
-//         throw new Error(`Failed to invalidate resolution (${response.status})`);
-//     }
-
-//     return await response.json();
-// }
-
-// function renderResolutionDetails(resolution, currentUser, token) {
-//     const contentDiv = document.getElementById('resolutionDetailContent');
+    const statusMap = {
+        'pending': 'Awaiting Review',
+        'approved': 'Approved',
+        'rejected': 'Rejected',
+        'return_initiated': 'Return Initiated',
+        'completed': 'Completed',
+        'invalidated': 'Item Mismatch'
+    };
     
-//     // Update subtitle based on resolution type
-//     const subtitle = document.getElementById('resolutionSubtitle');
-//     if (resolution.type === 'return') {
-//         subtitle.textContent = 'A finder believes they have your item.';
-//     } else if (resolution.type === 'claim') {
-//         subtitle.textContent = 'You reported finding an item, waiting for owner confirmation.';
-//     }
+    return statusMap[status] || String(status)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function setResolutionState(message, isError = false) {
+    const stateElement = document.getElementById('resolutionDetailState');
+    if (!stateElement) {
+        return;
+    }
+
+    stateElement.textContent = message;
+    stateElement.hidden = false;
+    stateElement.classList.toggle('resolution-detail-state-error', isError);
+}
+
+function hideResolutionState() {
+    const stateElement = document.getElementById('resolutionDetailState');
+    if (!stateElement) {
+        return;
+    }
+
+    stateElement.hidden = true;
+}
+
+async function fetchResolutionDetails(resolutionId, token) {
+    const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch resolution details (${response.status})`);
+    }
+
+    const payload = await response.json();
+    return payload;
+}
+
+async function approveResolution(resolutionId, token) {
+    const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/approve`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to approve resolution (${response.status})`);
+    }
+
+    return await response.json();
+}
+
+async function rejectResolution(resolutionId, token, reason = "This is not the correct item") {
+    const payload = {
+        rejection_reason: reason
+    };
+
+    const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/reject`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to reject resolution (${response.status})`);
+    }
+
+    return await response.json();
+}
+
+async function completeResolution(resolutionId, token) {
+    const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/complete`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to complete resolution (${response.status})`);
+    }
+
+    return await response.json();
+}
+
+async function invalidateResolution(resolutionId, token) {
+    const response = await fetch(`${API_BASE_URL}${RESOLUTIONS_ENDPOINT}/${resolutionId}/invalidate`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to invalidate resolution (${response.status})`);
+    }
+
+    return await response.json();
+}
+
+function renderResolutionDetails(data, currentUser, token) {
+    const contentDiv = document.getElementById('resolutionDetailContent');
+    const resolution = data.resolution;
+    const item = data.item;
+    const viewer = data.viewer;
+    const finderContact = data.finder_contact;
+    const allowedActions = data.allowed_actions || [];
     
-//     // Set status
-//     const statusElement = document.getElementById('resolutionStatus');
-//     if (statusElement) {
-//         statusElement.textContent = getStatusLabel(resolution.status);
-//         statusElement.className = `status-badge status-${resolution.status || 'unknown'}`;
-//     }
+    // Determine context-appropriate subtitle based on resolution type, status, and viewer role
+    const subtitle = document.getElementById('resolutionSubtitle');
+    const isOwnerInitiated = resolution.type === 'owner_initiated';
+    const isFinderInitiated = resolution.type === 'finder_initiated';
+    const viewerRole = viewer.role;
     
-//     // Finder/Claimer details
-//     const finderDetails = document.getElementById('finderDetails');
-//     if (resolution.finder && resolution.finder.name) {
-//         finderDetails.innerHTML = `
-//             <p><strong>${resolution.finder.name}</strong></p>
-//             <p class="small">Roll No: ${resolution.finder.roll_number || 'N/A'}</p>
-//             <p class="small">${resolution.finder.email || 'N/A'}</p>
-//             <p class="small">${resolution.finder.phone || 'N/A'}</p>
-//         `;
-//     } else {
-//         finderDetails.textContent = 'Finder details not available';
-//     }
+    if (isOwnerInitiated) {
+        // Found item: viewer is either "finder" (who reported) or "owner" (who claims)
+        if (viewerRole === 'finder') {
+            subtitle.textContent = 'Someone has claimed your found item. Please review and approve or reject their claim.';
+        } else if (viewerRole === 'owner') {
+            if (resolution.status === 'pending') {
+                subtitle.textContent = 'Your claim is pending. Waiting for the finder to review and approve.';
+            } else if (resolution.status === 'approved') {
+                subtitle.textContent = 'Your claim has been approved! Please coordinate with the finder to collect your item.';
+            } else if (resolution.status === 'rejected') {
+                subtitle.textContent = 'Unfortunately, your claim was rejected by the finder.';
+            } else {
+                subtitle.textContent = getStatusLabel(resolution.status);
+            }
+        }
+    } else if (isFinderInitiated) {
+        // Lost item: viewer is either "owner" (who reported lost) or "finder" (who found)
+        if (viewerRole === 'owner') {
+            if (resolution.status === 'return_initiated') {
+                subtitle.textContent = 'A finder has reported finding your lost item. Please verify it\'s the correct item and approve the return.';
+            } else if (resolution.status === 'approved') {
+                subtitle.textContent = 'You\'ve approved the return. Please confirm the collection and mark as completed, or mark as item mismatch if it\'s not the correct item.';
+            } else if (resolution.status === 'completed') {
+                subtitle.textContent = 'Great! Your item has been successfully returned.';
+            } else if (resolution.status === 'invalidated') {
+                subtitle.textContent = 'You\'ve marked this as an item mismatch. No action needed.';
+            } else {
+                subtitle.textContent = getStatusLabel(resolution.status);
+            }
+        } else if (viewerRole === 'finder') {
+            if (resolution.status === 'return_initiated') {
+                subtitle.textContent = 'You\'ve reported finding this item. Waiting for the owner to review and confirm.';
+            } else if (resolution.status === 'approved') {
+                subtitle.textContent = 'The owner has approved your report. Coordinate to hand over the item.';
+            } else if (resolution.status === 'completed') {
+                subtitle.textContent = 'The item return has been completed. Thank you for your help!';
+            } else if (resolution.status === 'invalidated') {
+                subtitle.textContent = 'The owner marked this as an item mismatch.';
+            } else {
+                subtitle.textContent = getStatusLabel(resolution.status);
+            }
+        }
+    }
     
-//     // Item details
-//     if (resolution.item) {
-//         const itemImage = document.getElementById('itemImageDetail');
-//         itemImage.src = normalizeImageUrl(resolution.item.image);
-//         itemImage.alt = resolution.item.title || 'Item image';
+    // Set status
+    const statusElement = document.getElementById('resolutionStatus');
+    if (statusElement) {
+        statusElement.textContent = getStatusLabel(resolution.status);
+        statusElement.className = `status-badge status-${resolution.status || 'unknown'}`;
+    }
+    
+    // Determine contact details section header based on context
+    let contactHeaderText = 'Contact Details';
+    if (isOwnerInitiated) {
+        if (viewerRole === 'finder') {
+            contactHeaderText = 'Claimer\'s Contact Details';
+        } else if (viewerRole === 'owner') {
+            contactHeaderText = 'Finder\'s Contact Details';
+        }
+    } else if (isFinderInitiated) {
+        if (viewerRole === 'owner') {
+            contactHeaderText = 'Finder\'s Contact Details';
+        } else if (viewerRole === 'finder') {
+            contactHeaderText = 'Owner\'s Contact Details';
+        }
+    }
+    
+    // Update the section header
+    const contactHeader = document.querySelector('.card h3');
+    if (contactHeader) {
+        contactHeader.textContent = contactHeaderText;
+    }
+    
+    // Finder/Claimer details
+    const finderDetails = document.getElementById('finderDetails');
+    if (finderContact && finderContact.name) {
+        finderDetails.innerHTML = `
+            <p><strong>${finderContact.name}</strong></p>
+            ${finderContact.email ? `<p class="small">Email: ${finderContact.email}</p>` : ''}
+            ${finderContact.phone ? `<p class="small">Phone: ${finderContact.phone}</p>` : ''}
+        `;
+    } else if (resolution.status === 'rejected') {
+        finderDetails.textContent = 'This claim/return request was rejected. No further action needed.';
+    } else if (resolution.status === 'pending') {
+        finderDetails.textContent = 'Contact details will be displayed after you approve.';
+    } else if (resolution.status === 'invalidated') {
+        finderDetails.textContent = 'This item return was marked as a mismatch. The item was not the correct match.';
+    } else {
+        finderDetails.textContent = 'Contact information not available.';
+    }
+    
+    // Item details
+    if (item) {
+        const itemImage = document.getElementById('itemImageDetail');
+        itemImage.src = normalizeImageUrl(item.image);
+        itemImage.alt = item.title || 'Item image';
         
-//         document.getElementById('itemTitleDetail').textContent = resolution.item.title || 'Untitled Item';
-//         document.getElementById('itemLocationDetail').textContent = formatLocation(resolution.item.location);
-//         document.getElementById('itemDateDetail').textContent = formatDate(resolution.item.date);
-//     }
+        document.getElementById('itemTitleDetail').textContent = item.title || 'Untitled Item';
+        document.getElementById('itemLocationDetail').textContent = formatLocation(item.location);
+        document.getElementById('itemDateDetail').textContent = formatDate(item.date);
+    }
     
-//     // Resolution description
-//     document.getElementById('resolutionDescription').textContent = resolution.description || 'No description provided';
-//     document.getElementById('resolutionSubmittedDate').textContent = formatDate(resolution.created_at);
+    // Resolution description
+    document.getElementById('resolutionDescription').textContent = resolution.description || 'No description provided';
+    document.getElementById('resolutionSubmittedDate').textContent = formatDate(resolution.created_at);
     
-//     // Show/hide buttons based on status and user role
-//     const completeButton = document.getElementById('completeButton');
-//     const rejectButton = document.getElementById('rejectButton');
-//     const approveButton = document.getElementById('approveButton');
-//     const invalidateButton = document.getElementById('invalidateButton');
+    // Show/hide buttons based on allowed actions
+    const completeButton = document.getElementById('completeButton');
+    const rejectButton = document.getElementById('rejectButton');
+    const approveButton = document.getElementById('approveButton');
+    const invalidateButton = document.getElementById('invalidateButton');
     
-//     // Determine user role (owner or finder)
-//     const isOwner = currentUser && resolution.item && resolution.item.owner_id === currentUser.publicId;
-//     const isFinder = currentUser && resolution.finder_id === currentUser.publicId;
+    // Hide all buttons first
+    completeButton.style.display = 'none';
+    rejectButton.style.display = 'none';
+    approveButton.style.display = 'none';
+    invalidateButton.style.display = 'none';
     
-//     // Show appropriate buttons based on resolution status and user role
-//     if (resolution.status === 'pending') {
-//         if (isFinder && resolution.type === 'return') {
-//             // Finder waiting for owner response
-//             approveButton.style.display = 'none';
-//             rejectButton.style.display = 'none';
-//             completeButton.style.display = 'none';
-//             invalidateButton.style.display = 'none';
-//         } else if (isOwner && resolution.type === 'return') {
-//             // Owner can approve or reject
-//             approveButton.style.display = 'inline-block';
-//             rejectButton.style.display = 'inline-block';
-//             completeButton.style.display = 'none';
-//             invalidateButton.style.display = 'none';
-//         } else if (isOwner && resolution.type === 'claim') {
-//             // Owner can claim or reject
-//             approveButton.style.display = 'inline-block';
-//             rejectButton.style.display = 'inline-block';
-//             completeButton.style.display = 'none';
-//             invalidateButton.style.display = 'none';
-//         }
-//     } else if (resolution.status === 'approved') {
-//         if (isOwner) {
-//             completeButton.style.display = 'inline-block';
-//             invalidateButton.style.display = 'inline-block';
-//             approveButton.style.display = 'none';
-//             rejectButton.style.display = 'none';
-//         } else {
-//             completeButton.style.display = 'none';
-//             invalidateButton.style.display = 'none';
-//             approveButton.style.display = 'none';
-//             rejectButton.style.display = 'none';
-//         }
-//     } else {
-//         // Completed, rejected, or invalidated
-//         completeButton.style.display = 'none';
-//         rejectButton.style.display = 'none';
-//         approveButton.style.display = 'none';
-//         invalidateButton.style.display = 'none';
-//     }
+    // Show buttons based on allowed actions
+    if (allowedActions.includes('approve')) {
+        approveButton.style.display = 'inline-block';
+        // Button text based on resolution type
+        if (isFinderInitiated) {
+            approveButton.textContent = 'Approve Return';
+        } else {
+            approveButton.textContent = 'Approve Claim';
+        }
+        approveButton.onclick = () => handleApproveResolution(resolution.id, token, isFinderInitiated);
+    }
     
-//     // Add event listeners to buttons
-//     if (approveButton.style.display !== 'none') {
-//         approveButton.onclick = () => handleApproveResolution(resolution.id, token);
-//     }
-//     if (rejectButton.style.display !== 'none') {
-//         rejectButton.onclick = () => handleRejectResolution(resolution.id, token);
-//     }
-//     if (completeButton.style.display !== 'none') {
-//         completeButton.onclick = () => handleCompleteResolution(resolution.id, token);
-//     }
-//     if (invalidateButton.style.display !== 'none') {
-//         invalidateButton.onclick = () => handleInvalidateResolution(resolution.id, token);
-//     }
+    if (allowedActions.includes('reject')) {
+        rejectButton.style.display = 'inline-block';
+        // Button text based on resolution type
+        if (isFinderInitiated) {
+            rejectButton.textContent = 'Reject / Item Doesn\'t Match';
+        } else {
+            rejectButton.textContent = 'Reject Claim';
+        }
+        rejectButton.onclick = () => handleRejectResolution(resolution.id, token, isFinderInitiated);
+    }
     
-//     contentDiv.hidden = false;
-// }
+    if (allowedActions.includes('complete')) {
+        completeButton.style.display = 'inline-block';
+        completeButton.textContent = 'Mark as Completed';
+        completeButton.onclick = () => handleCompleteResolution(resolution.id, token, isFinderInitiated);
+    }
+    
+    if (allowedActions.includes('invalidate')) {
+        invalidateButton.style.display = 'inline-block';
+        // Button text based on resolution type
+        if (isFinderInitiated) {
+            invalidateButton.textContent = 'Item Mismatch';
+        } else {
+            invalidateButton.textContent = 'Item Doesn\'t Match';
+        }
+        invalidateButton.onclick = () => handleInvalidateResolution(resolution.id, token, isFinderInitiated);
+    }
+    
+    contentDiv.hidden = false;
+}
 
-// async function handleApproveResolution(resolutionId, token) {
-//     try {
-//         await approveResolution(resolutionId, token);
-//         alert('Resolution approved successfully!');
-//         location.reload();
-//     } catch (error) {
-//         alert('Failed to approve resolution: ' + error.message);
-//     }
-// }
-
-// async function handleRejectResolution(resolutionId, token) {
-//     try {
-//         await rejectResolution(resolutionId, token);
-//         alert('Resolution rejected successfully!');
-//         location.reload();
-//     } catch (error) {
-//         alert('Failed to reject resolution: ' + error.message);
-//     }
-// }
-
-// async function handleCompleteResolution(resolutionId, token) {
-//     try {
-//         await completeResolution(resolutionId, token);
-//         alert('Resolution completed successfully!');
-//         location.reload();
-//     } catch (error) {
-//         alert('Failed to complete resolution: ' + error.message);
-//     }
-// }
-
-// async function handleInvalidateResolution(resolutionId, token) {
-//     try {
-//         await invalidateResolution(resolutionId, token);
-//         alert('Resolution invalidated successfully!');
-//         location.reload();
-//     } catch (error) {
-//         alert('Failed to invalidate resolution: ' + error.message);
-//     }
-// }
-
-// export async function initResolutionDetail() {
-//     const resolutionId = getQueryParam('id');
-    
-//     if (!resolutionId) {
-//         // Only show error if user is on resolution page without ID
-//         const stateElement = document.getElementById('resolutionDetailState');
-//         if (stateElement) {
-//             setResolutionState('Resolution not found. Please select a notification.', true);
-//         }
-//         return;
-//     }
-    
-//     const stateElement = document.getElementById('resolutionDetailState');
-//     if (stateElement) {
-//         setResolutionState('Loading resolution details...');
-//     }
-    
-//     try {
-//         const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-//         if (!token) {
-//             setResolutionState('Please log in to view resolution details.', true);
-//             return;
-//         }
+async function handleApproveResolution(resolutionId, token, isFinderInitiated) {
+    try {
+        const button = document.getElementById('approveButton');
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Approving...';
         
-//         const resolution = await fetchResolutionDetails(resolutionId, token);
+        await approveResolution(resolutionId, token);
         
-//         if (!resolution) {
-//             setResolutionState('Resolution not found.', true);
-//             return;
-//         }
+        const message = isFinderInitiated 
+            ? 'Return approved successfully! A notification has been sent to the finder.' 
+            : 'Claim approved successfully! A notification has been sent to the claimer.';
+        alert(message);
         
-//         const currentUser = await fetchCurrentUser();
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    } catch (error) {
+        alert('Failed to approve resolution: ' + error.message);
+        location.reload();
+    }
+}
+
+async function handleRejectResolution(resolutionId, token, isFinderInitiated) {
+    try {
+        const button = document.getElementById('rejectButton');
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Rejecting...';
         
-//         hideResolutionState();
-//         renderResolutionDetails(resolution, currentUser, token);
-//     } catch (error) {
-//         console.error('Error loading resolution details:', error);
-//         setResolutionState('Unable to load resolution details. Please try again.', true);
-//     }
-// }
+        await rejectResolution(resolutionId, token);
+        
+        const message = isFinderInitiated 
+            ? 'Return rejected successfully! A notification has been sent to the finder.' 
+            : 'Claim rejected successfully! A notification has been sent to the claimer.';
+        alert(message);
+        
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    } catch (error) {
+        alert('Failed to reject resolution: ' + error.message);
+        location.reload();
+    }
+}
+
+async function handleCompleteResolution(resolutionId, token, isFinderInitiated) {
+    try {
+        const button = document.getElementById('completeButton');
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Completing...';
+        
+        await completeResolution(resolutionId, token);
+        
+        const message = isFinderInitiated 
+            ? 'Item retrieval completed successfully! Thank you for using Retrievo.' 
+            : 'Item transfer completed successfully! Thank you for using Retrievo.';
+        alert(message);
+        
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    } catch (error) {
+        alert('Failed to complete resolution: ' + error.message);
+        location.reload();
+    }
+}
+
+async function handleInvalidateResolution(resolutionId, token, isFinderInitiated) {
+    try {
+        const button = document.getElementById('invalidateButton');
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Marking...';
+        
+        await invalidateResolution(resolutionId, token);
+        
+        const message = isFinderInitiated 
+            ? 'Item marked as incorrect/mismatch. The finder has been notified that this was not the correct item.' 
+            : 'Item marked as mismatched. The claimer has been notified.';
+        alert(message);
+        
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    } catch (error) {
+        alert('Failed to mark item as mismatched: ' + error.message);
+        location.reload();
+    }
+}
+
+export async function initResolutionDetail() {
+    const resolutionId = getQueryParam('id');
+    
+    if (!resolutionId) {
+        setResolutionState('Resolution not found. Please select a notification.', true);
+        return;
+    }
+    
+    setResolutionState('Loading resolution details...');
+    
+    try {
+        const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+        if (!token) {
+            setResolutionState('Please log in to view resolution details.', true);
+            return;
+        }
+        
+        const data = await fetchResolutionDetails(resolutionId, token);
+        
+        if (!data) {
+            setResolutionState('Resolution not found.', true);
+            return;
+        }
+        
+        const currentUser = await fetchCurrentUser();
+        
+        hideResolutionState();
+        renderResolutionDetails(data, currentUser, token);
+    } catch (error) {
+        console.error('Error loading resolution details:', error);
+        setResolutionState('Unable to load resolution details. Please try again.', true);
+    }
+}
