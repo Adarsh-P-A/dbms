@@ -170,12 +170,18 @@ function renderResolutionDetails(data, currentUser, token) {
     const finderContact = data.finder_contact;
     const allowedActions = data.allowed_actions || [];
     
-    // Update subtitle based on resolution type
+    // Update subtitle based on resolution type and status
     const subtitle = document.getElementById('resolutionSubtitle');
     if (resolution.type === 'owner_initiated') {
         subtitle.textContent = 'Someone has claimed your item. Please review and approve or reject.';
     } else if (resolution.type === 'finder_initiated') {
-        subtitle.textContent = 'A finder has initiated a return. Please confirm or reject.';
+        if (resolution.status === 'return_initiated') {
+            subtitle.textContent = 'A finder believes they have your lost item. Please confirm the return or mark as mismatched.';
+        } else if (resolution.status === 'approved') {
+            subtitle.textContent = 'Your return has been approved. Complete the exchange or mark as mismatched.';
+        } else {
+            subtitle.textContent = 'Return status: ' + getStatusLabel(resolution.status);
+        }
     }
     
     // Set status
@@ -193,8 +199,10 @@ function renderResolutionDetails(data, currentUser, token) {
             ${finderContact.email ? `<p class="small">Email: ${finderContact.email}</p>` : ''}
             ${finderContact.phone ? `<p class="small">Phone: ${finderContact.phone}</p>` : ''}
         `;
+    } else if (resolution.type === 'finder_initiated') {
+        finderDetails.textContent = 'The finder\'s contact details have been provided above. You can reach out to confirm the item details.';
     } else {
-        finderDetails.textContent = 'Contact details will be shown once you approve the claim.';
+        finderDetails.textContent = 'Contact details will be displayed after you approve the claim.';
     }
     
     // Item details
