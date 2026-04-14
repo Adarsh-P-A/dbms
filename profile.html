@@ -35,20 +35,34 @@
 
             <section class="content">
                 <h1>My Profile</h1>
-                <div class="profile-card">
-                    <div class="profile-header">
-                        <div class="profile-avatar-large" id="profileAvatar">😊</div>
-                        <div>
-                            <h2 id="profileName">John Doe</h2>
-                            <p id="profileDepartment">Computer Science Dept.</p>
+                <div class="profile-container">
+                    <!-- Left Side: Profile Info -->
+                    <div class="profile-section-left">
+                        <div class="profile-card">
+                            <div class="profile-header">
+                                <div class="profile-avatar-large" id="profileAvatar">😊</div>
+                                <div>
+                                    <h2 id="profileName">John Doe</h2>
+                                    <p id="profileDepartment">Computer Science Dept.</p>
+                                </div>
+                            </div>
+                            <div class="profile-details">
+                                <p><strong>Email:</strong> <span id="profileEmail">john.doe@student.edu</span></p>
+                                <p><strong>Phone:</strong> <span id="profilePhone">+1 234 567 8900</span></p>
+                                <p><strong>Hostel:</strong> <span id="profileHostel">Not set</span></p>
+                                <p><strong>Instagram:</strong> <span id="profileInstagram">Not set</span></p>
+                                <p><strong>Public ID:</strong> <span id="profilePublicId">-</span></p>
+                            </div>
                         </div>
                     </div>
-                    <div class="profile-details">
-                        <p><strong>Email:</strong> <span id="profileEmail">john.doe@student.edu</span></p>
-                        <p><strong>Phone:</strong> <span id="profilePhone">+1 234 567 8900</span></p>
-                        <p><strong>Hostel:</strong> <span id="profileHostel">Not set</span></p>
-                        <p><strong>Instagram:</strong> <span id="profileInstagram">Not set</span></p>
-                        <p><strong>Public ID:</strong> <span id="profilePublicId">-</span></p>
+                    
+                    <!-- Right Side: User's Items -->
+                    <div class="profile-section-right">
+                        <h3>My Reported Items</h3>
+                        <p id="userItemsState" class="items-state">Loading your items...</p>
+                        <div class="items-grid" id="userItemsGrid">
+                            <!-- User's items will be displayed here -->
+                        </div>
                     </div>
                 </div>
             </section>
