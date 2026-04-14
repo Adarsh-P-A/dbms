@@ -1,4 +1,5 @@
 import { fetchCurrentUser } from './auth.js';
+import { API_BASE_URL, ACCESS_TOKEN_STORAGE_KEY } from './config.js';
 
 // Utility function to get the initial from a name for avatar fallback
 function getInitial(name) {
@@ -79,6 +80,199 @@ function renderProfileAvatar(profileAvatar, user) {
     };
 
     avatarImage.src = avatarCandidates[currentIndex];
+}
+
+function formatDate(rawDate) {
+    if (!rawDate) {
+        return 'Date not available';
+    }
+
+    const date = new Date(rawDate);
+    if (Number.isNaN(date.getTime())) {
+        return rawDate;
+    }
+
+    return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatLocation(rawLocation) {
+    if (!rawLocation) {
+        return 'Unknown location';
+    }
+
+    return String(rawLocation)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function normalizeImageUrl(rawUrl) {
+    if (typeof rawUrl !== 'string') {
+        return '';
+    }
+
+    return rawUrl.trim().replace(/["']/g, '');
+}
+
+function getTypeLabel(type) {
+    if (type === 'lost') {
+        return 'Lost';
+    }
+
+    if (type === 'found') {
+        return 'Found';
+    }
+
+    return 'Item';
+}
+
+function createItemCard(item) {
+    const card = document.createElement('article');
+    card.className = 'item-card';
+
+    const media = document.createElement('div');
+    media.className = 'item-card-media';
+
+    const image = document.createElement('img');
+    image.className = 'item-card-image';
+    image.src = normalizeImageUrl(item.image);
+    image.alt = item.title || 'Item image';
+    image.loading = 'lazy';
+    image.referrerPolicy = 'no-referrer';
+
+    const fallback = document.createElement('div');
+    fallback.className = 'item-card-image-fallback';
+    fallback.textContent = 'No image';
+
+    const badge = document.createElement('span');
+    badge.className = 'item-card-badge';
+    if (item.type === 'lost') {
+        badge.classList.add('item-card-badge-lost');
+    } else if (item.type === 'found') {
+        badge.classList.add('item-card-badge-found');
+    }
+    badge.textContent = getTypeLabel(item.type);
+
+    image.addEventListener('error', () => {
+        image.remove();
+        media.prepend(fallback);
+    });
+
+    const title = document.createElement('h3');
+    title.className = 'item-card-title';
+    title.textContent = item.title || 'Untitled Item';
+
+    const details = document.createElement('div');
+    details.className = 'item-card-details';
+
+    const dateRow = document.createElement('p');
+    dateRow.className = 'item-card-meta';
+    dateRow.textContent = `Date: ${formatDate(item.date)}`;
+
+    const locationRow = document.createElement('p');
+    locationRow.className = 'item-card-date';
+    locationRow.textContent = `Location: ${formatLocation(item.location)}`;
+
+    details.appendChild(dateRow);
+    details.appendChild(locationRow);
+
+    const ctaButton = document.createElement('button');
+    ctaButton.type = 'button';
+    ctaButton.className = 'btn-primary item-card-button';
+    ctaButton.textContent = 'View Details';
+    
+    // Add click handler to navigate to item detail page
+    ctaButton.addEventListener('click', () => {
+        if (item.id) {
+            window.location.href = `item-detail.html?id=${item.id}`;
+        }
+    });
+
+    media.appendChild(image);
+    media.appendChild(badge);
+
+    card.appendChild(media);
+    card.appendChild(title);
+    card.appendChild(details);
+    card.appendChild(ctaButton);
+
+    return card;
+}
+
+function setUserItemsState(message, isError = false) {
+    const stateElement = document.getElementById('userItemsState');
+    if (!stateElement) {
+        return;
+    }
+
+    stateElement.textContent = message;
+    stateElement.hidden = false;
+    stateElement.classList.toggle('items-state-error', isError);
+}
+
+function hideUserItemsState() {
+    const stateElement = document.getElementById('userItemsState');
+    if (!stateElement) {
+        return;
+    }
+
+    stateElement.hidden = true;
+}
+
+async function fetchUserItems(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/profile/items`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user items (${response.status})`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching user items:', error);
+        throw error;
+    }
+}
+
+function renderUserItems(itemsData) {
+    const grid = document.getElementById('userItemsGrid');
+    if (!grid) {
+        return;
+    }
+
+    grid.innerHTML = '';
+
+    const allItems = [...(itemsData.lost_items || []), ...(itemsData.found_items || [])];
+
+    if (allItems.length === 0) {
+        grid.innerHTML = '<p class="no-results">You haven\'t reported any items yet.</p>';
+        return;
+    }
+
+    for (const item of allItems) {
+        grid.appendChild(createItemCard(item));
+    }
+}
+
+async function loadUserItems(token) {
+    try {
+        setUserItemsState('Loading your items...');
+        const itemsData = await fetchUserItems(token);
+        hideUserItemsState();
+        renderUserItems(itemsData);
+    } catch (error) {
+        setUserItemsState('Unable to load your items. Please try again.', true);
+        console.error('Error loading user items:', error);
+    }
 }
 
 export async function initProfile() {
@@ -166,4 +360,10 @@ export async function initProfile() {
     }
 
     renderProfileAvatar(profileAvatar, user);
+
+    // Load user's items
+    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (token) {
+        loadUserItems(token);
+    }
 }
