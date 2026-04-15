@@ -190,6 +190,18 @@ function validateFormPayload(payload) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.itemDate)) {
         return 'Please pick a valid date.';
     }
+    //Date range validation
+    const selectedDate = new Date(payload.itemDate);
+    const today = new Date();
+    const minDate = new Date('2026-01-01');
+
+    if (selectedDate > today) {
+        return 'Date cannot be in the future.';
+    }
+
+    if (selectedDate < minDate) {
+        return 'Date cannot be before Jan 1, 2026.';
+    }
 
     if (payload.title.length < 2 || payload.title.length > 20) {
         return 'Title must be between 2 and 20 characters.';
@@ -258,6 +270,19 @@ export function initReportForm() {
     const form = document.getElementById('reportForm');
     if (!form) {
         return;
+    }
+    
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+        const today = new Date();
+
+        const formattedToday = today.getFullYear() + "-" +
+            String(today.getMonth() + 1).padStart(2, '0') + "-" +
+            String(today.getDate()).padStart(2, '0');
+
+      dateInput.max = formattedToday;   // no future dates
+      dateInput.min = "2026-01-01";     // lower bound
+      dateInput.value = formattedToday; // default today
     }
 
     // Prevent onboarding-incomplete users from accessing report creation.
