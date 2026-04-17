@@ -1,0 +1,70 @@
+name: retrievo-dbms-project
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: retrievo_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - retrievo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./retrievo-backend
+      dockerfile: Dockerfile.dev
+    image: retrievo-backend:dbms-project
+    container_name: backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/retrievo_db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./retrievo-backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - retrievo-network
+
+  # Nginx Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: retrievo-frontend:dbms-project
+    container_name: frontend
+    ports:
+      - "80:80"
+    volumes:
+      - .:/usr/share/nginx/html
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - retrievo-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  retrievo-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
