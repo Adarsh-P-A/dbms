@@ -234,6 +234,10 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
     const badge = document.getElementById('itemBadge');
     badge.innerHTML = '';
     badge.className = 'item-detail-badge';
+    badge.style.display = 'inline-flex';
+    badge.style.gap = '8px';
+    badge.style.alignItems = 'center';
+    
     if (item.type === 'lost') {
         badge.classList.add('item-detail-badge-lost');
     } else if (item.type === 'found') {
@@ -243,15 +247,20 @@ function renderItemDetails(itemData, claimStatus, currentUser) {
     // Add type label
     const typeLabel = document.createElement('span');
     typeLabel.textContent = getTypeLabel(item.type);
+    typeLabel.className = 'badge-type-label';
     badge.appendChild(typeLabel);
     
     // Add resolution status label if it exists
     if (claimStatus && claimStatus !== 'none') {
         const statusLabel = document.createElement('span');
-        statusLabel.textContent = claimStatus.charAt(0).toUpperCase() + claimStatus.slice(1).replace(/_/g, ' ');
-        statusLabel.style.marginLeft = '8px';
+        statusLabel.textContent = '• ' + claimStatus.charAt(0).toUpperCase() + claimStatus.slice(1).replace(/_/g, ' ');
+        statusLabel.className = 'badge-status-label';
+        statusLabel.style.opacity = '0.9';
+        statusLabel.style.fontSize = '0.9rem';
         badge.appendChild(statusLabel);
     }
+    
+    console.log('[Debug] Badge rendered - Type:', item.type, ', Status:', claimStatus);
     
     // Set title
     document.getElementById('itemTitle').textContent = item.title || 'Untitled Item';
