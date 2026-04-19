@@ -86,20 +86,24 @@ function renderNotifications(listElement, notifications, token) {
 
         item.appendChild(message);
         item.appendChild(time);
+
+        item.style.cursor = 'pointer';
         
         // Add click handler to navigate to resolution page if resolution_id exists
-        if (notification.resolution_id) {
-            item.style.cursor = 'pointer';
+        if (notification.resolution_id || notification.item_id) {
             item.addEventListener('click', async () => {
                 // Mark as read before navigating
                 if (!notification.is_read) {
                     await markNotificationAsRead(notification.id, token);
                 }
-                window.location.href = `resolution.html?id=${notification.resolution_id}`;
+                if (notification.resolution_id) {
+                    window.location.href = `resolution.html?id=${notification.resolution_id}`;
+                } else {
+                    window.location.href = `item-detail.html?id=${notification.item_id}`;
+                }
             });
         } else {
             // For non-resolution notifications, still mark as read on click
-            item.style.cursor = 'pointer';
             item.addEventListener('click', async () => {
                 if (!notification.is_read) {
                     await markNotificationAsRead(notification.id, token);

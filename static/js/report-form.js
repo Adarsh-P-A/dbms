@@ -409,7 +409,8 @@ export function initReportForm() {
             }
 
             if (payload && payload.item_id) {
-                alert(`Report submitted successfully. Item ID: ${payload.item_id}`);
+                alert(`Report submitted successfully.`);
+                window.location.href = `item-detail.html?id=${payload.item_id}`;
             } else {
                 alert('Report submitted successfully.');
             }
