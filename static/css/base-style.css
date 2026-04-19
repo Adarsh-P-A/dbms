@@ -624,7 +624,9 @@ h1 {
 }
 
 .item-detail-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     padding: 6px 12px;
     border-radius: 999px;
     font-size: 0.85rem;
@@ -633,6 +635,7 @@ h1 {
     background: #6b7280;
     width: fit-content;
     margin-bottom: 12px;
+    white-space: nowrap;
 }
 
 .item-detail-badge-lost {
@@ -641,6 +644,18 @@ h1 {
 
 .item-detail-badge-found {
     background: #d97706;
+}
+
+.badge-type-label {
+    display: inline-block;
+    font-weight: 700;
+}
+
+.badge-status-label {
+    display: inline-block;
+    font-size: 0.8rem;
+    opacity: 0.95;
+    font-weight: 500;
 }
 
 .item-detail-info h1 {
