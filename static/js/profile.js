@@ -254,10 +254,11 @@ function renderUserItems(itemsData) {
     const allItems = [...(itemsData.lost_items || []), ...(itemsData.found_items || [])];
 
     if (allItems.length === 0) {
-        grid.innerHTML = '<p class="no-results">You haven\'t reported any items yet.</p>';
+        setUserItemsState("You haven't reported any items");
         return;
     }
 
+    hideUserItemsState();
     for (const item of allItems) {
         grid.appendChild(createItemCard(item));
     }
@@ -267,7 +268,6 @@ async function loadUserItems(token) {
     try {
         setUserItemsState('Loading your items...');
         const itemsData = await fetchUserItems(token);
-        hideUserItemsState();
         renderUserItems(itemsData);
     } catch (error) {
         setUserItemsState('Unable to load your items. Please try again.', true);
